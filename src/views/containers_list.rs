@@ -1,12 +1,19 @@
 use dioxus::prelude::*;
 
 use super::icons::*;
-use crate::{format_mem, states::MainState, APP_CTX, views::{render_mem_graph, render_cpu_graph}};
+use crate::{
+    format_mem,
+    states::MainState,
+    views::{render_cpu_graph, render_mem_graph},
+    APP_CTX,
+};
 
 pub fn containers_list(cx: Scope) -> Element {
     let main_state = use_shared_state::<MainState>(cx).unwrap();
 
     let show_disabled_state = use_state(cx, || false);
+
+    let show_graph = use_state(cx, ||  "".to_string());
 
     match main_state.read().get_containers() {
         Some(containers) => {
@@ -18,7 +25,6 @@ pub fn containers_list(cx: Scope) -> Element {
                     }
                     true
                 })
-                
                 .map(|(vm_name, itm)| {
                     let color = if itm.enabled { "black" } else { "lightgray" };
                     let cpu_usage = if let Some(usage) = itm.cpu.usage {
@@ -39,18 +45,38 @@ pub fn containers_list(cx: Scope) -> Element {
                         "N/A".to_string()
                     };
 
-                    let vm_name = if let Some(vm_name) = vm_name{
-                        rsx!{
-                            server_icon_16 {}
-                            span { "{vm_name}" }
-                        }
-                    }else{
-                        rsx!{ div {} }
+             
+
+
+ 
+                    let id_cloned = itm.id.clone();
+                    let id_cloned2 = itm.id.clone();
+
+                    let vm_name = if let Some(vm_name) = vm_name {
+            
+                        
+                            rsx! {
+                                server_icon_16 {}
+                                span { "{vm_name}" }
+                            }
+                         
+                    } else {
+                        rsx! { div {} }
                     };
 
-                    
 
-           
+       
+                    let (cpu_graph, mem_graph) = if &itm.id == show_graph.get() {
+                        let cpu_snapshot = itm.cpu_usage_history.get_snapshot();
+
+                        let mem_snapshot = itm.mem_usage_history.get_snapshot();
+                        (
+                            rsx! { render_cpu_graph{values: cpu_snapshot  }   },
+                            rsx! {div{render_mem_graph{values: mem_snapshot  } }},
+                        )
+                    } else {
+                        (rsx! {div{}}, rsx! {div{}})
+                    };
 
                     let items = if let Some(labels) = &itm.labels {
                         let items = labels.iter().map(|(key, value)| {
@@ -70,13 +96,26 @@ pub fn containers_list(cx: Scope) -> Element {
                             td { items }
 
                             td {
-                                div { style: "padding:0", cpu_icon(cx), ": {cpu_usage}" }
-                                div { style: "padding:0", render_cpu_graph { values: itm.cpu_usage_history.get_snapshot() } }
-                                div { style: "padding:0;font-size: 12px; margin-top: 5px;",
+                                div {
+                                    style: "cursor:pointer; padding:0",
+                                    onclick: move |_| {
+                                        let id_cloned = id_cloned.clone();
+                                        show_graph.set(id_cloned)
+                                    },
+                                    cpu_icon(cx),
+                                    ": {cpu_usage}"
+                                }
+                                div { style: "padding:0", cpu_graph }
+                                div {
+                                    style: "cursor:pointer;padding:0;font-size: 12px; margin-top: 5px;",
+                                    onclick: move |_| {
+                                        let id_cloned = id_cloned2.clone();
+                                        show_graph.set(id_cloned)
+                                    },
                                     memory_icon(cx),
                                     ": {mem_usage}/{mem_limit}"
                                 }
-                                div { style: "padding:0", render_mem_graph { values: itm.mem_usage_history.get_snapshot() } }
+                                div { style: "padding:0", mem_graph }
                             }
                         }
                     }
@@ -108,8 +147,6 @@ pub fn containers_list(cx: Scope) -> Element {
             };
 
             let selected_value = main_state.read().filter.to_string();
-
-
 
             render! {
                 table { class: "table table-striped", style: "text-align: left;",
