@@ -100,7 +100,6 @@ pub fn containers_list(cx: Scope) -> Element {
                                                 class: "form-control form-control-sm",
                                                 value: "{selected_value}",
                                                 oninput: move |cx| {
-                                                    println!("Setting Filtered value {}", cx.value.to_string());
                                                     selected_vm_state.write().filter = cx.value.to_string();
                                                 }
                                             }
