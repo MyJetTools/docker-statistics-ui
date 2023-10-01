@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use dioxus::prelude::{SvgAttributes, *};
+use dioxus::prelude::*;
 
 use crate::{
     format_mem,

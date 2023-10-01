@@ -1,20 +1,21 @@
 use std::collections::VecDeque;
 
-pub struct HistoryCache<T: Clone> {
+pub const METRICS_HISTORY_SIZE: usize = 150;
+
+#[derive(Clone)]
+pub struct MetricsHistory<T: Copy> {
     data: VecDeque<T>,
-    max_amount: usize,
 }
 
-impl<T: Clone> HistoryCache<T> {
-    pub fn new(max_amount: usize) -> Self {
+impl<T: Copy> MetricsHistory<T> {
+    pub fn new() -> Self {
         Self {
             data: VecDeque::new(),
-            max_amount,
         }
     }
 
     pub fn add(&mut self, value: T) {
-        while self.data.len() >= self.max_amount {
+        while self.data.len() >= METRICS_HISTORY_SIZE {
             self.data.pop_front();
         }
 

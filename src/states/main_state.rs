@@ -1,4 +1,4 @@
-use crate::http_client::ContainerJsonModel;
+use crate::app_ctx::ContainerModel;
 
 #[derive(Clone, Debug)]
 pub enum SelectedVm {
@@ -27,7 +27,7 @@ impl SelectedVm {
 pub struct MainState {
     pub state_no: usize,
     selected_vm: Option<SelectedVm>,
-    containers: Option<Vec<(Option<String>, ContainerJsonModel)>>,
+    containers: Option<Vec<(Option<String>, ContainerModel)>>,
     pub filter: String,
 }
 
@@ -69,7 +69,7 @@ impl MainState {
         self.selected_vm.clone()
     }
 
-    pub fn get_containers(&self) -> Option<Vec<&(Option<String>, ContainerJsonModel)>> {
+    pub fn get_containers(&self) -> Option<Vec<&(Option<String>, ContainerModel)>> {
         let items = self.containers.as_ref()?;
 
         let mut result = Vec::with_capacity(items.len());
@@ -84,7 +84,7 @@ impl MainState {
         Some(result)
     }
 
-    pub fn set_containers(&mut self, containers: Vec<(Option<String>, ContainerJsonModel)>) {
+    pub fn set_containers(&mut self, containers: Vec<(Option<String>, ContainerModel)>) {
         self.containers = Some(containers);
     }
 }

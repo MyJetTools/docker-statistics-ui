@@ -33,7 +33,7 @@ async fn main() {
     let settings_reader: Arc<SettingsReader> = Arc::new(settings_reader);
     APP_CTX.inject_settings(settings_reader).await;
 
-    let mut timer_5s = MyTimer::new(Duration::from_secs(6));
+    let mut timer_5s = MyTimer::new(Duration::from_secs(5));
     timer_5s.register_timer("MetricsUpdate", Arc::new(UpdateMetricsCacheTimer));
     timer_5s.start(APP_CTX.app_states.clone(), my_logger::LOGGER.clone());
 

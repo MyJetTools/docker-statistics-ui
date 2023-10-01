@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 
 use super::icons::*;
-use crate::{format_mem, states::MainState, APP_CTX};
+use crate::{format_mem, states::MainState, APP_CTX, views::{render_mem_graph, render_cpu_graph}};
 
 pub fn containers_list(cx: Scope) -> Element {
     let main_state = use_shared_state::<MainState>(cx).unwrap();
@@ -48,6 +48,10 @@ pub fn containers_list(cx: Scope) -> Element {
                         rsx!{ div {} }
                     };
 
+                    
+
+           
+
                     let items = if let Some(labels) = &itm.labels {
                         let items = labels.iter().map(|(key, value)| {
                             rsx! { div { style: "font-size:10px; padding:0", "{key}={value}" } }
@@ -67,7 +71,9 @@ pub fn containers_list(cx: Scope) -> Element {
 
                             td {
                                 div { cpu_icon(cx), ": {cpu_usage}" }
+                                div { render_cpu_graph { values: itm.cpu_usage_history.get_snapshot() } }
                                 div { style: "font-size: 12px", memory_icon(cx), ": {mem_usage}/{mem_limit}" }
+                                div { render_mem_graph { values: itm.mem_usage_history.get_snapshot() } }
                             }
                         }
                     }
@@ -99,6 +105,9 @@ pub fn containers_list(cx: Scope) -> Element {
             };
 
             let selected_value = main_state.read().filter.to_string();
+
+
+
             render! {
                 table { class: "table table-striped", style: "text-align: left;",
                     tr {

@@ -20,44 +20,6 @@ pub struct ContainerJsonModel {
     pub mem: MemUsageJsonMode,
 }
 
-impl ContainerJsonModel {
-    pub fn filter_me(&self, value: &str) -> bool {
-        if value == "" {
-            return true;
-        }
-
-        if self.id.contains(value) {
-            return true;
-        }
-
-        let value = value.to_lowercase();
-
-        if self.image.to_lowercase().contains(&value) {
-            return true;
-        }
-
-        for name in &self.names {
-            if name.to_lowercase().contains(&value) {
-                return true;
-            }
-        }
-
-        if let Some(labels) = &self.labels {
-            for (key, v) in labels {
-                if key.to_lowercase().contains(&value) {
-                    return true;
-                }
-
-                if v.to_lowercase().contains(&value) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct CpuUsageJsonMode {
     pub usage: Option<f64>,
