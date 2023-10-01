@@ -51,7 +51,7 @@ async fn main() {
 
 fn app(cx: Scope) -> Element {
     use_shared_state_provider(cx, || SelectedVm::new());
-    use_shared_state_provider(cx, || DialogState::Hidden);
+    //use_shared_state_provider(cx, || DialogState::Hidden);
 
     render! {
         div { id: "layout",

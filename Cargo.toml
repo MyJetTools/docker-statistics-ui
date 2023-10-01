@@ -20,7 +20,7 @@ settings-utils = { tag = "0.1.0", git = "https://github.com/MyJetTools/settings-
 dioxus = "*"
 dioxus-desktop = "*"
 dioxus-liveview = { varsion = "*", features = ["salvo"] }
-dioxus-ssr = "*"
+dioxus-fullstack = "*"
 dioxus-free-icons = { path = "./libs/icon-packages/lib", features = [
     "bootstrap",
     "ionicons",
