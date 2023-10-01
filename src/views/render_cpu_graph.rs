@@ -64,5 +64,9 @@ fn get_max_scale(values: &[f64]) -> f64 {
         }
     }
 
-    max + max
+    if max < 0.001 {
+        return 0.001;
+    }
+
+    max
 }
