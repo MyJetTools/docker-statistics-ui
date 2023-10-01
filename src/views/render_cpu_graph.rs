@@ -68,5 +68,5 @@ fn get_max_scale(values: &[f64]) -> f64 {
         return 0.001;
     }
 
-    max
+    max + max * 0.1
 }

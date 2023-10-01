@@ -70,10 +70,13 @@ pub fn containers_list(cx: Scope) -> Element {
                             td { items }
 
                             td {
-                                div { cpu_icon(cx), ": {cpu_usage}" }
-                                div { render_cpu_graph { values: itm.cpu_usage_history.get_snapshot() } }
-                                div { style: "font-size: 12px", memory_icon(cx), ": {mem_usage}/{mem_limit}" }
-                                div { render_mem_graph { values: itm.mem_usage_history.get_snapshot() } }
+                                div { style: "padding:0", cpu_icon(cx), ": {cpu_usage}" }
+                                div { style: "padding:0", render_cpu_graph { values: itm.cpu_usage_history.get_snapshot() } }
+                                div { style: "padding:0;font-size: 12px; margin-top: 5px;",
+                                    memory_icon(cx),
+                                    ": {mem_usage}/{mem_limit}"
+                                }
+                                div { style: "padding:0", render_mem_graph { values: itm.mem_usage_history.get_snapshot() } }
                             }
                         }
                     }
