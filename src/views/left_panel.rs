@@ -1,64 +1,78 @@
 use std::collections::BTreeMap;
 
-use dioxus::prelude::*;
+use dioxus::prelude::{SvgAttributes, *};
 
-use crate::{format_mem, states::SelectedVm, views::icons::*, APP_CTX};
+use crate::{
+    format_mem,
+    states::{MainState, SelectedVm},
+    views::icons::*,
+    APP_CTX,
+};
 
 pub fn left_panel(cx: Scope) -> Element {
-    let vms_state: &UseState<Option<BTreeMap<String, (f64, i64)>>> = use_state(cx, || None);
+    let vms_state: &UseState<Option<BTreeMap<String, (f64, i64, usize)>>> = use_state(cx, || None);
     let env_name = use_state(cx, || "".to_string());
 
-    let selected_vm = use_shared_state::<SelectedVm>(cx).unwrap();
+    let selected_vm_state = use_shared_state::<MainState>(cx).unwrap();
+
+    let selected_vm = selected_vm_state.read();
+
+    let mut total_cpu = 0.0;
+    let mut total_mem = 0;
+    let mut total_amount = 0;
 
     match vms_state.get() {
         Some(vms) => {
-            let items = vms.iter().map(|itm| {
-                let (vm, (cpu, mem)) = itm;
+            let items = vms.into_iter().map(|itm| {
+                let (vm, (cpu, mem, amount)) = itm;
 
-                let vm_cloned = vm.clone();
+                total_cpu += cpu;
+                total_mem += mem;
+                total_amount += amount;
 
-                let server_icon = server_icon(cx);
-                let mem_icon = memory_icon(cx);
-                let cpu_icon = cpu_icon(cx);
-
-                let content = rsx! {
-                    table {
-                        tr {
-                            td { server_icon }
-                            td {
-                                div { span { style: "font-size:12px", "{vm}" } }
-                                div {
-                                    cpu_icon,
-                                    span { style: "font-size:10px", ":{cpu:.2}%  " }
-                                    mem_icon,
-                                    span { style: "font-size:10px", ":{format_mem(*mem)}" }
-                                }
-                            }
-                        }
-                    }
-                };
-
-                if selected_vm.read().is_vm_selected(vm) {
+                if selected_vm.is_single_vm_selected(vm) {
                     rsx! {
-                        div { class: "menu-item menu-active", content }
+                        div { class: "menu-item menu-active",
+                            render_vm_menu_item { name: vm, cpu: *cpu, mem: *mem, amount: *amount }
+                        }
                     }
                 } else {
                     rsx! {
                         div {
                             class: "menu-item",
                             onclick: move |_| {
-                                selected_vm.write().set_selected_vm(vm_cloned.to_string());
+                                selected_vm_state.write().set_selected_vm(SelectedVm::SingleVm(vm.to_string()));
                             },
-                            content
+                            render_vm_menu_item { name: vm, cpu: *cpu, mem: *mem, amount: *amount }
                         }
                     }
+                }
+            });
+
+            let mut items: Vec<_> = items.collect();
+
+            items.push(rsx! { hr {} });
+
+            let menu_active = if selected_vm.is_all_vms_selected() {
+                "menu-active"
+            } else {
+                ""
+            };
+
+            items.push(rsx! {
+                div {
+                    class: "menu-item {menu_active}",
+                    onclick: move |_| {
+                        selected_vm_state.write().set_selected_vm(SelectedVm::All);
+                    },
+                    render_vm_menu_item { name: "All VMs", cpu: total_cpu, mem: total_mem, amount: total_amount }
                 }
             });
 
             return render! {
                 h1 { "Dockers" }
                 h4 { id: "env-type", "{env_name.get()}" }
-                items
+                items.into_iter()
             };
         }
         None => {
@@ -68,7 +82,7 @@ pub fn left_panel(cx: Scope) -> Element {
     }
 }
 
-fn read_loop(cx: &Scope, vms_state: &UseState<Option<BTreeMap<String, (f64, i64)>>>) {
+fn read_loop(cx: &Scope, vms_state: &UseState<Option<BTreeMap<String, (f64, i64, usize)>>>) {
     let vms_state = vms_state.to_owned();
     cx.spawn(async move {
         let mut no = 0;
@@ -96,4 +110,31 @@ fn read_loop(cx: &Scope, vms_state: &UseState<Option<BTreeMap<String, (f64, i64)
             }
         }
     })
+}
+
+#[inline_props]
+fn render_vm_menu_item<'s>(
+    cx: Scope<'s>,
+    name: &'s str,
+    cpu: f64,
+    mem: i64,
+    amount: usize,
+) -> Element {
+    let mem = format_mem(*mem);
+    render! {
+        table {
+            tr {
+                td { server_icon {} }
+                td {
+                    div { span { style: "font-size:12px", "{name}: ({amount})" } }
+                    div {
+                        cpu_icon {}
+                        span { font: "courier", style: "font-size:10px", ":{cpu:.3}  " }
+                        memory_icon {}
+                        span { style: "font-size:10px", ":{mem}" }
+                    }
+                }
+            }
+        }
+    }
 }

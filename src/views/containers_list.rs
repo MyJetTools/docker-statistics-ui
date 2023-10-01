@@ -1,27 +1,28 @@
 use dioxus::prelude::*;
 
 use super::icons::*;
-use crate::{format_mem, states::SelectedVm, APP_CTX};
+use crate::{format_mem, states::MainState, APP_CTX};
 
 pub fn containers_list(cx: Scope) -> Element {
-    let selected_vm_state = use_shared_state::<SelectedVm>(cx).unwrap();
+    let main_state = use_shared_state::<MainState>(cx).unwrap();
 
     let show_disabled_state = use_state(cx, || false);
 
-    match selected_vm_state.read().get_containers() {
-        Some(templates) => {
-            let templates = templates
+    match main_state.read().get_containers() {
+        Some(containers) => {
+            let containers = containers
                 .iter()
-                .filter(|itm| {
+                .filter(|(_, itm)| {
                     if !show_disabled_state && !itm.enabled {
                         return false;
                     }
                     true
                 })
-                .map(|itm| {
+                
+                .map(|(vm_name, itm)| {
                     let color = if itm.enabled { "black" } else { "lightgray" };
                     let cpu_usage = if let Some(usage) = itm.cpu.usage {
-                        format!("{:.2}%", usage)
+                        format!("{:.3}", usage)
                     } else {
                         "N/A".to_string()
                     };
@@ -38,6 +39,15 @@ pub fn containers_list(cx: Scope) -> Element {
                         "N/A".to_string()
                     };
 
+                    let vm_name = if let Some(vm_name) = vm_name{
+                        rsx!{
+                            server_icon_16 {}
+                            span { "{vm_name}" }
+                        }
+                    }else{
+                        rsx!{ div {} }
+                    };
+
                     let items = if let Some(labels) = &itm.labels {
                         let items = labels.iter().map(|(key, value)| {
                             rsx! { div { style: "font-size:10px; padding:0", "{key}={value}" } }
@@ -49,13 +59,16 @@ pub fn containers_list(cx: Scope) -> Element {
                     };
                     rsx! {
                         tr { style: "border-top: 1px solid lightgray; color: {color}",
-                            td { "{itm.image}" }
+                            td {
+                                div { "{itm.image}" }
+                                div { vm_name }
+                            }
                             td { items }
 
-                            td { cpu_usage }
-                            td { "{mem_usage}/{mem_limit}" }
-                            td {}
-                            td {}
+                            td {
+                                div { cpu_icon(cx), ": {cpu_usage}" }
+                                div { style: "font-size: 12px", memory_icon(cx), ": {mem_usage}/{mem_limit}" }
+                            }
                         }
                     }
                 });
@@ -85,7 +98,7 @@ pub fn containers_list(cx: Scope) -> Element {
                 }
             };
 
-            let selected_value = selected_vm_state.read().filter.to_string();
+            let selected_value = main_state.read().filter.to_string();
             render! {
                 table { class: "table table-striped", style: "text-align: left;",
                     tr {
@@ -100,7 +113,7 @@ pub fn containers_list(cx: Scope) -> Element {
                                                 class: "form-control form-control-sm",
                                                 value: "{selected_value}",
                                                 oninput: move |cx| {
-                                                    selected_vm_state.write().filter = cx.value.to_string();
+                                                    main_state.write().filter = cx.value.to_string();
                                                 }
                                             }
                                         }
@@ -109,41 +122,38 @@ pub fn containers_list(cx: Scope) -> Element {
                                 }
                             }
                         }
-                        th { "Cpu" }
-                        th { "Mem" }
-                        th {}
+                        th { "Cpu/Mem" }
                     }
 
-                    templates.into_iter()
+                    containers.into_iter()
                 }
             }
         }
         None => {
-            load_containers(&cx, &selected_vm_state);
+            load_containers(&cx, &main_state);
             render! { div {} }
         }
     }
 }
 
-fn load_containers(cx: &Scope, selected_vm_state: &UseSharedState<SelectedVm>) {
-    let selected_vm = selected_vm_state.read().get_selected_vm();
+fn load_containers(cx: &Scope, main_state: &UseSharedState<MainState>) {
+    let selected_vm = main_state.read().get_selected_vm();
     if selected_vm.is_none() {
         return;
     }
 
     let selected_vm = selected_vm.unwrap();
 
-    let selected_vm_state = selected_vm_state.to_owned();
+    let main_state = main_state.to_owned();
 
-    println!("Started loop for {}", selected_vm);
+    let loop_state_no = main_state.read().state_no;
 
     cx.spawn(async move {
         let mut no = 0;
         loop {
             let selected_vm = selected_vm.clone();
 
-            if !selected_vm_state.read().is_vm_selected(&selected_vm) {
-                println!("Stopped {}", selected_vm);
+            if !main_state.read().state_no == loop_state_no {
                 break;
             }
 
@@ -155,19 +165,15 @@ fn load_containers(cx: &Scope, selected_vm_state: &UseSharedState<SelectedVm>) {
 
             let items = tokio::spawn(async move {
                 tokio::time::sleep(delay).await;
-                (
-                    APP_CTX.metrics_cache.get_metrics_by_vm(&selected_vm).await,
-                    selected_vm,
-                )
+                APP_CTX.metrics_cache.get_metrics_by_vm(&selected_vm).await
             })
             .await;
 
             no += 1;
-            let (items, selected_vm) = items.unwrap();
+            let items = items.unwrap();
 
-            if selected_vm_state.read().is_vm_selected(&selected_vm) {
-                println!("Settings containers for vm {} ", selected_vm);
-                selected_vm_state.write().set_containers(items);
+            if main_state.read().state_no == loop_state_no {
+                main_state.write().set_containers(items);
             }
         }
     });
