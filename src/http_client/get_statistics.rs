@@ -32,6 +32,10 @@ impl ContainerJsonModel {
 
         let value = value.to_lowercase();
 
+        if self.image.to_lowercase().contains(&value) {
+            return true;
+        }
+
         for name in &self.names {
             if name.to_lowercase().contains(&value) {
                 return true;
