@@ -26,7 +26,7 @@ pub fn render_cpu_graph(cx: Scope, values: Vec<f64>) -> Element {
                 x2: "{x}",
                 y1: "{y}",
                 y2: "{HEIGHT}",
-                style: "stroke:rgb(0,255,0);stroke-width:1"
+                style: "stroke:rgb(0,128,0);stroke-width:1"
             }
         });
         x += 1;
@@ -64,5 +64,5 @@ fn get_max_scale(values: &[f64]) -> f64 {
         }
     }
 
-    max + max * 0.2
+    max + max
 }

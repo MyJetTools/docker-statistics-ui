@@ -57,8 +57,5 @@ fn get_max_scale(values: &[i64]) -> f64 {
     let max = *values.iter().max().unwrap_or(&1);
 
     let max = max as f64;
-
-    let max = max + max * 0.2;
-
     max
 }
