@@ -1,34 +1,14 @@
 use crate::app_ctx::ContainerModel;
 
-#[derive(Clone, Debug)]
-pub enum SelectedVm {
-    All,
-    SingleVm(String),
-}
-
-impl SelectedVm {
-    pub fn is_all(&self) -> bool {
-        match self {
-            SelectedVm::All => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_single_selected_with_name(&self, name: &str) -> bool {
-        match self {
-            SelectedVm::SingleVm(value) => {
-                return value == name;
-            }
-            _ => false,
-        }
-    }
-}
+use super::SelectedVm;
 
 pub struct MainState {
     pub state_no: usize,
     selected_vm: Option<SelectedVm>,
-    containers: Option<Vec<(Option<String>, ContainerModel)>>,
+    containers: Option<Vec<(Option<String>, String, ContainerModel)>>,
     pub filter: String,
+
+    pub dialog_is_shown: bool,
 }
 
 impl MainState {
@@ -38,6 +18,7 @@ impl MainState {
             containers: None,
             filter: "".to_string(),
             state_no: 0,
+            dialog_is_shown: false,
         }
     }
 
@@ -69,22 +50,22 @@ impl MainState {
         self.selected_vm.clone()
     }
 
-    pub fn get_containers(&self) -> Option<Vec<&(Option<String>, ContainerModel)>> {
+    pub fn get_containers(&self) -> Option<Vec<&(Option<String>, String, ContainerModel)>> {
         let items = self.containers.as_ref()?;
 
         let mut result = Vec::with_capacity(items.len());
         for itm in items.iter() {
-            if itm.1.filter_me(&self.filter) {
+            if itm.2.filter_me(&self.filter) {
                 result.push(itm)
             }
         }
 
-        result.sort_by(|a, b| a.1.image.cmp(&b.1.image));
+        result.sort_by(|a, b| a.2.image.cmp(&b.2.image));
 
         Some(result)
     }
 
-    pub fn set_containers(&mut self, containers: Vec<(Option<String>, ContainerModel)>) {
+    pub fn set_containers(&mut self, containers: Vec<(Option<String>, String, ContainerModel)>) {
         self.containers = Some(containers);
     }
 }

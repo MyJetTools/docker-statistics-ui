@@ -22,7 +22,7 @@ impl MyTimerTick for UpdateMetricsCacheTimer {
 
             APP_CTX
                 .metrics_cache
-                .update(&statistics.vm, statistics.containers)
+                .update(&statistics.vm, statistics.containers, url)
                 .await
         }
     }

@@ -19,10 +19,12 @@ pub fn render_dialog(cx: Scope) -> Element {
 
             let mut dialog_class = "modal-dialog";
             let dialog_content = match dialog_type {
-                DialogType::AddSecret => {
+                DialogType::ShowLogs{url, container_id} => {
                     dialog_class = "modal-dialog-narrow";
-                    rsx! { edit_secret { secret: "".to_string() } }
+                    rsx! { show_logs { url: url.clone(), container_id: container_id.clone() } }
                 }
+
+                /*
                 DialogType::EditSecret(secret) => {
                     dialog_class = "modal-dialog-narrow";
                     rsx! { edit_secret { secret: secret.clone() } }
@@ -67,6 +69,7 @@ pub fn render_dialog(cx: Scope) -> Element {
                     let secret = secret.clone();
                     rsx! { show_secret_usage_by_secret { secret: secret } }
                 }
+                 */
             };
 
             rsx! {

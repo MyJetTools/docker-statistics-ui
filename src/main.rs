@@ -51,12 +51,13 @@ async fn main() {
 
 fn app(cx: Scope) -> Element {
     use_shared_state_provider(cx, || MainState::new());
-    //use_shared_state_provider(cx, || DialogState::Hidden);
+    use_shared_state_provider(cx, || DialogState::Hidden);
 
     render! {
         div { id: "layout",
             div { id: "left-panel", left_panel {} }
             div { id: "right-panel", containers_list {} }
+            dialog::render_dialog {}
         }
     }
 }

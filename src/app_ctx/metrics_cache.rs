@@ -9,6 +9,13 @@ use crate::{
 
 use super::MetricsHistory;
 
+pub struct VmModel {
+    pub api_url: String,
+    pub cpu: f64,
+    pub mem: i64,
+    pub containers_amount: usize,
+}
+
 #[derive(Clone)]
 pub struct ContainerModel {
     pub id: String,
@@ -20,6 +27,12 @@ pub struct ContainerModel {
     pub mem: MemUsageJsonMode,
     pub cpu_usage_history: MetricsHistory<f64>,
     pub mem_usage_history: MetricsHistory<i64>,
+}
+
+#[derive(Clone)]
+pub struct ContainersWrapper {
+    pub api_url: String,
+    pub containers: BTreeMap<String, ContainerModel>,
 }
 
 impl Into<ContainerModel> for ContainerJsonModel {
@@ -92,7 +105,7 @@ impl ContainerModel {
 }
 
 pub struct MetricsCache {
-    data: RwLock<BTreeMap<String, BTreeMap<String, ContainerModel>>>,
+    data: RwLock<BTreeMap<String, ContainersWrapper>>,
 }
 
 impl MetricsCache {
@@ -102,7 +115,7 @@ impl MetricsCache {
         }
     }
 
-    pub async fn update(&self, vm: &str, containers: Vec<ContainerJsonModel>) {
+    pub async fn update(&self, vm: &str, containers: Vec<ContainerJsonModel>, api_url: String) {
         let mut src = BTreeMap::new();
 
         for container in containers {
@@ -112,18 +125,24 @@ impl MetricsCache {
         let mut write_access = self.data.write().await;
 
         if !write_access.contains_key(vm) {
-            write_access.insert(vm.to_string(), BTreeMap::new());
+            write_access.insert(
+                vm.to_string(),
+                ContainersWrapper {
+                    api_url,
+                    containers: BTreeMap::new(),
+                },
+            );
         }
 
         let by_vm = write_access.get_mut(vm).unwrap();
 
-        remove_not_used_keys_keys(by_vm, &src);
+        remove_not_used_keys_keys(&mut by_vm.containers, &src);
 
         for (id, container) in src {
-            if !by_vm.contains_key(&id) {
-                by_vm.insert(id.clone(), container.into());
+            if !by_vm.containers.contains_key(&id) {
+                by_vm.containers.insert(id.clone(), container.into());
             } else {
-                let by_id = by_vm.get_mut(&id).unwrap();
+                let by_id = by_vm.containers.get_mut(&id).unwrap();
                 by_id.update(container);
             }
         }
@@ -135,9 +154,9 @@ impl MetricsCache {
         let mut result = BTreeMap::new();
 
         for (vm, items) in read_access.iter() {
-            let mut vm_result = Vec::with_capacity(items.len());
+            let mut vm_result = Vec::with_capacity(items.containers.len());
 
-            for itm in items.values() {
+            for itm in items.containers.values() {
                 vm_result.push(itm.clone());
             }
 
@@ -150,10 +169,10 @@ impl MetricsCache {
     pub async fn get_cpu_by_vm_and_container(&self) -> BTreeMap<String, BTreeMap<String, f64>> {
         let mut result = BTreeMap::new();
 
-        for (vm, items) in self.data.read().await.iter() {
+        for (vm, wrapper) in self.data.read().await.iter() {
             let mut vm_result = BTreeMap::new();
 
-            for itm in items.values() {
+            for itm in wrapper.containers.values() {
                 let cpu_usage = if let Some(usage) = itm.cpu.usage {
                     usage
                 } else {
@@ -172,10 +191,10 @@ impl MetricsCache {
     pub async fn get_mem_by_vm_and_container(&self) -> BTreeMap<String, BTreeMap<String, i64>> {
         let mut result = BTreeMap::new();
 
-        for (vm, items) in self.data.read().await.iter() {
+        for (vm, wrapper) in self.data.read().await.iter() {
             let mut vm_result = BTreeMap::new();
 
-            for itm in items.values() {
+            for itm in wrapper.containers.values() {
                 let mem_usage = if let Some(usage) = itm.mem.usage {
                     usage
                 } else {
@@ -191,17 +210,17 @@ impl MetricsCache {
         result
     }
 
-    pub async fn get_vm_cpu_and_mem(&self) -> BTreeMap<String, (f64, i64, usize)> {
+    pub async fn get_vm_cpu_and_mem(&self) -> BTreeMap<String, VmModel> {
         let mut result = BTreeMap::new();
 
         let read_access = self.data.read().await;
 
-        for (vm, data) in read_access.iter() {
+        for (vm, wrapper) in read_access.iter() {
             let mut cpu = 0.0;
             let mut mem = 0;
-            let mut amount = 0;
+            let mut containers_amount = 0;
 
-            for itm in data.values() {
+            for itm in wrapper.containers.values() {
                 if let Some(usage) = itm.cpu.usage {
                     cpu += usage;
                 }
@@ -211,11 +230,19 @@ impl MetricsCache {
                 }
 
                 if itm.enabled {
-                    amount += 1;
+                    containers_amount += 1;
                 }
             }
 
-            result.insert(vm.clone(), (cpu, mem, amount));
+            result.insert(
+                vm.clone(),
+                VmModel {
+                    api_url: wrapper.api_url.clone(),
+                    cpu,
+                    mem,
+                    containers_amount,
+                },
+            );
         }
 
         result
@@ -224,28 +251,28 @@ impl MetricsCache {
     pub async fn get_metrics_by_vm(
         &self,
         selected_vm: &SelectedVm,
-    ) -> Vec<(Option<String>, ContainerModel)> {
+    ) -> Vec<(Option<String>, String, ContainerModel)> {
         let read_access = self.data.read().await;
 
         match selected_vm {
             SelectedVm::All => {
                 let mut result = Vec::new();
 
-                for (vm, items) in read_access.iter() {
-                    for itm in items.values() {
-                        result.push((Some(vm.to_string()), itm.clone()));
+                for (vm, wrapper) in read_access.iter() {
+                    for itm in wrapper.containers.values() {
+                        result.push((Some(vm.to_string()), wrapper.api_url.clone(), itm.clone()));
                     }
                 }
 
                 result
             }
             SelectedVm::SingleVm(vm) => match read_access.get(vm) {
-                Some(items) => {
-                    let mut result: Vec<(Option<String>, ContainerModel)> =
-                        Vec::with_capacity(items.len());
+                Some(wrapper) => {
+                    let mut result: Vec<(Option<String>, String, ContainerModel)> =
+                        Vec::with_capacity(wrapper.containers.len());
 
-                    for item in items.values() {
-                        result.push((None, item.clone()));
+                    for item in wrapper.containers.values() {
+                        result.push((None, wrapper.api_url.clone(), item.clone()));
                     }
 
                     result

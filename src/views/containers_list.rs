@@ -3,13 +3,15 @@ use dioxus::prelude::*;
 use super::icons::*;
 use crate::{
     format_mem,
-    states::MainState,
+    states::{MainState, DialogState, DialogType},
     views::{render_cpu_graph, render_mem_graph},
     APP_CTX,
 };
 
 pub fn containers_list(cx: Scope) -> Element {
     let main_state = use_shared_state::<MainState>(cx).unwrap();
+
+    let dialog_sate = use_shared_state::<DialogState>(cx).unwrap();
 
     let show_disabled_state = use_state(cx, || false);
 
@@ -19,13 +21,13 @@ pub fn containers_list(cx: Scope) -> Element {
         Some(containers) => {
             let containers = containers
                 .iter()
-                .filter(|(_, itm)| {
+                .filter(|(_, _, itm)| {
                     if !show_disabled_state && !itm.enabled {
                         return false;
                     }
                     true
                 })
-                .map(|(vm_name, itm)| {
+                .map(|(vm_name, url, itm)| {
                     let color = if itm.enabled { "black" } else { "lightgray" };
                     let cpu_usage = if let Some(usage) = itm.cpu.usage {
                         format!("{:.3}", usage)
@@ -45,21 +47,19 @@ pub fn containers_list(cx: Scope) -> Element {
                         "N/A".to_string()
                     };
 
-             
-
-
- 
                     let id_cloned = itm.id.clone();
                     let id_cloned2 = itm.id.clone();
+                    let id_cloned_show_logs = itm.id.clone();
+
+                    let url_show_logs = url.clone();
 
                     let vm_name = if let Some(vm_name) = vm_name {
-            
-                        
-                            rsx! {
+                        rsx! {
+                            div { title: "{url}",
                                 server_icon_16 {}
                                 span { "{vm_name}" }
                             }
-                         
+                        }   
                     } else {
                         rsx! { div {} }
                     };
@@ -92,6 +92,23 @@ pub fn containers_list(cx: Scope) -> Element {
                             td {
                                 div { "{itm.image}" }
                                 div { vm_name }
+                                div {
+                                    button {
+                                        class: "btn btn-sm btn-primary",
+                                        onclick: move |_| {
+                                            dialog_sate
+                                                .write()
+                                                .show_dialog(
+                                                    "Logs of container".to_string(),
+                                                    DialogType::ShowLogs {
+                                                        container_id: id_cloned_show_logs.clone(),
+                                                        url: url_show_logs.clone(),
+                                                    },
+                                                );
+                                        },
+                                        "Show logs"
+                                    }
+                                }
                             }
                             td { items }
 

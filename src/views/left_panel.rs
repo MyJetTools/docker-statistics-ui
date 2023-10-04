@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use dioxus::prelude::*;
 
 use crate::{
+    app_ctx::VmModel,
     format_mem,
     states::{MainState, SelectedVm},
     views::icons::*,
@@ -10,30 +11,39 @@ use crate::{
 };
 
 pub fn left_panel(cx: Scope) -> Element {
-    let vms_state: &UseState<Option<BTreeMap<String, (f64, i64, usize)>>> = use_state(cx, || None);
+    let vms_state: &UseState<Option<BTreeMap<String, VmModel>>> = use_state(cx, || None);
     let env_name = use_state(cx, || "".to_string());
 
     let selected_vm_state = use_shared_state::<MainState>(cx).unwrap();
 
     let selected_vm = selected_vm_state.read();
 
-    let mut total_cpu = 0.0;
-    let mut total_mem = 0;
-    let mut total_amount = 0;
+    let mut all_vms = VmModel {
+        api_url: "".to_string(),
+        cpu: 0.0,
+        mem: 0,
+        containers_amount: 0,
+    };
 
     match vms_state.get() {
         Some(vms) => {
             let items = vms.into_iter().map(|itm| {
-                let (vm, (cpu, mem, amount)) = itm;
+                let (vm, vm_model) = itm;
 
-                total_cpu += cpu;
-                total_mem += mem;
-                total_amount += amount;
+                all_vms.cpu += vm_model.cpu;
+                all_vms.mem += vm_model.mem;
+                all_vms.containers_amount += vm_model.containers_amount;
 
                 if selected_vm.is_single_vm_selected(vm) {
                     rsx! {
                         div { class: "menu-item menu-active",
-                            render_vm_menu_item { name: vm, cpu: *cpu, mem: *mem, amount: *amount }
+                            render_vm_menu_item {
+                                name: vm,
+                                cpu: vm_model.cpu,
+                                mem: vm_model.mem,
+                                amount: vm_model.containers_amount,
+                                url: vm_model.api_url.to_string()
+                            }
                         }
                     }
                 } else {
@@ -43,7 +53,13 @@ pub fn left_panel(cx: Scope) -> Element {
                             onclick: move |_| {
                                 selected_vm_state.write().set_selected_vm(SelectedVm::SingleVm(vm.to_string()));
                             },
-                            render_vm_menu_item { name: vm, cpu: *cpu, mem: *mem, amount: *amount }
+                            render_vm_menu_item {
+                                name: vm,
+                                cpu: vm_model.cpu,
+                                mem: vm_model.mem,
+                                amount: vm_model.containers_amount,
+                                url: vm_model.api_url.to_string()
+                            }
                         }
                     }
                 }
@@ -65,7 +81,13 @@ pub fn left_panel(cx: Scope) -> Element {
                     onclick: move |_| {
                         selected_vm_state.write().set_selected_vm(SelectedVm::All);
                     },
-                    render_vm_menu_item { name: "All VMs", cpu: total_cpu, mem: total_mem, amount: total_amount }
+                    render_vm_menu_item {
+                        name: "All VMs",
+                        cpu: all_vms.cpu,
+                        mem: all_vms.mem,
+                        amount: all_vms.containers_amount,
+                        url: all_vms.api_url.to_string()
+                    }
                 }
             });
 
@@ -82,7 +104,7 @@ pub fn left_panel(cx: Scope) -> Element {
     }
 }
 
-fn read_loop(cx: &Scope, vms_state: &UseState<Option<BTreeMap<String, (f64, i64, usize)>>>) {
+fn read_loop(cx: &Scope, vms_state: &UseState<Option<BTreeMap<String, VmModel>>>) {
     let vms_state = vms_state.to_owned();
     cx.spawn(async move {
         let mut no = 0;
@@ -114,16 +136,17 @@ fn read_loop(cx: &Scope, vms_state: &UseState<Option<BTreeMap<String, (f64, i64,
 
 #[inline_props]
 fn render_vm_menu_item<'s>(
-    cx: Scope<'s>,
+    cx: Scope,
     name: &'s str,
     cpu: f64,
     mem: i64,
     amount: usize,
+    url: String,
 ) -> Element {
     let mem = format_mem(*mem);
     render! {
         table {
-            tr {
+            tr { title: "{url}",
                 td { server_icon {} }
                 td {
                     div { span { style: "font-size:12px", "{name}: ({amount})" } }

@@ -1,16 +1,20 @@
 pub enum DialogType {
+    /*
     ShowSecret(String),
     AddSecret,
+
     EditSecret(String),
     DeleteSecret(String),
 
     AddTemplate,
     AddTemplateFromOtherTemplate { env: String, name: String },
     EditTemplate { env: String, name: String },
-    DeleteTemplate { env: String, name: String },
-    ShowPopulatedYaml { env: String, name: String },
+    DeleteTemplate { env: String, name: String }, */
+    ShowLogs { url: String, container_id: String },
+    /*
     SecretUsage(String),
     SecretUsageBySecret(String),
+     */
 }
 
 pub enum DialogState {
