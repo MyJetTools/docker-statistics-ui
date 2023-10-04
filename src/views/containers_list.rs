@@ -87,6 +87,8 @@ pub fn containers_list(cx: Scope) -> Element {
                     } else {
                         rsx! { div {} }
                     };
+
+                    let image_cloned = itm.image.clone();
                     rsx! {
                         tr { style: "border-top: 1px solid lightgray; color: {color}",
                             td {
@@ -99,7 +101,7 @@ pub fn containers_list(cx: Scope) -> Element {
                                             dialog_sate
                                                 .write()
                                                 .show_dialog(
-                                                    "Logs of container".to_string(),
+                                                    format!("Logs of container {}", image_cloned),
                                                     DialogType::ShowLogs {
                                                         container_id: id_cloned_show_logs.clone(),
                                                         url: url_show_logs.clone(),

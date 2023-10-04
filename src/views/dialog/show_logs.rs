@@ -28,29 +28,33 @@ pub fn show_logs<'s>(cx: Scope<'s, ShowPopulatedYamlProps>) -> Element {
 
     render! {
         div { class: "modal-content",
-            span { "Lines amount" }
-            input {
-                value: "{amount_value}",
-                r#type: "number",
-                onchange: move |cx| {
-                    lines_amount.set(cx.value.parse().unwrap_or(100));
+            div { class: "input-group",
+                span { class: "input-group-text", "Amount" }
+                input {
+                    class: "form-control",
+                    value: "{amount_value}",
+                    r#type: "number",
+                    onchange: move |cx| {
+                        lines_amount.set(cx.value.parse().unwrap_or(100));
+                    }
+                }
+                button {
+                    class: "btn btn-outline-secondary",
+                    onclick: move |_| {
+                        load_logs(
+                            &cx,
+                            logs,
+                            cx.props.url.to_string(),
+                            cx.props.container_id.to_string(),
+                            *lines_amount.get(),
+                        );
+                    },
+                    "Request"
                 }
             }
-            button {
-                class: "btn btn-success, btn-sm",
-                onclick: move |_| {
-                    load_logs(
-                        &cx,
-                        logs,
-                        cx.props.url.to_string(),
-                        cx.props.container_id.to_string(),
-                        *lines_amount.get(),
-                    );
-                },
-                "Request"
-            }
+
             textarea {
-                style: "height:80vh; font-size: 14px;",
+                style: "height:80vh; font-size: 14px; margin-top:10px",
                 class: "form-control modal-content-full-screen",
                 readonly: true,
                 logs.as_str()
