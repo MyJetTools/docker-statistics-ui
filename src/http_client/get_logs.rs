@@ -22,6 +22,5 @@ pub async fn get_logs(url: String, container_id: String, lines: u32) -> Result<S
 
     let result = String::from_utf8(result.unwrap()).unwrap();
 
-    println!("Result: {:?}", result);
     Ok(result)
 }

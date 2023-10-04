@@ -17,10 +17,9 @@ pub fn render_dialog(cx: Scope) -> Element {
             dialog_type,
         } => {
 
-            let mut dialog_class = "modal-dialog";
+            let dialog_class = "modal-dialog";
             let dialog_content = match dialog_type {
                 DialogType::ShowLogs{url, container_id} => {
-                    dialog_class = "modal-dialog-narrow";
                     rsx! { show_logs { url: url.clone(), container_id: container_id.clone() } }
                 }
 
