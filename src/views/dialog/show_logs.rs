@@ -24,9 +24,37 @@ pub fn show_logs<'s>(cx: Scope<'s, ShowPopulatedYamlProps>) -> Element {
         };
     }
 
+    let amount_value = lines_amount.get().to_string();
+
     render! {
         div { class: "modal-content",
-            textarea { class: "form-control modal-content-full-screen", readonly: true, logs.as_str() }
+            span { "Lines amount" }
+            input {
+                value: "{amount_value}",
+                r#type: "number",
+                onchange: move |cx| {
+                    lines_amount.set(cx.value.parse().unwrap_or(100));
+                }
+            }
+            button {
+                class: "btn btn-success, btn-sm",
+                onclick: move |_| {
+                    load_logs(
+                        &cx,
+                        logs,
+                        cx.props.url.to_string(),
+                        cx.props.container_id.to_string(),
+                        *lines_amount.get(),
+                    );
+                },
+                "Request"
+            }
+            textarea {
+                style: "height:80vh; font-size: 14px;",
+                class: "form-control modal-content-full-screen",
+                readonly: true,
+                logs.as_str()
+            }
         }
     }
 }
@@ -38,9 +66,6 @@ fn load_logs<'s>(
     container_id: String,
     lines_amount: u32,
 ) {
-    println!("Getting logs from URL: {}", url);
-    println!("Id: {}", container_id);
-    println!("Lines Amount: {}", lines_amount);
     let state = state.to_owned();
 
     cx.spawn(async move {
