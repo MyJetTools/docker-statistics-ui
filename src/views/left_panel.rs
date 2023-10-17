@@ -149,8 +149,8 @@ fn render_vm_menu_item<'s>(
     amount: usize,
     url: String,
 ) -> Element {
-    let mem = format_mem(mem);
-    let mem_limit = format_mem(mem_limit);
+    let mem = format_mem(*mem);
+    let mem_limit = format_mem(*mem_limit);
     render! {
         table {
             tr { title: "{url}",
