@@ -22,6 +22,7 @@ pub fn left_panel(cx: Scope) -> Element {
         api_url: "".to_string(),
         cpu: 0.0,
         mem: 0,
+        mem_limit: 0,
         containers_amount: 0,
     };
 
@@ -33,6 +34,7 @@ pub fn left_panel(cx: Scope) -> Element {
                 all_vms.cpu += vm_model.cpu;
                 all_vms.mem += vm_model.mem;
                 all_vms.containers_amount += vm_model.containers_amount;
+                all_vms.mem_limit += vm_model.mem_limit;
 
                 if selected_vm.is_single_vm_selected(vm) {
                     rsx! {
@@ -41,6 +43,7 @@ pub fn left_panel(cx: Scope) -> Element {
                                 name: vm,
                                 cpu: vm_model.cpu,
                                 mem: vm_model.mem,
+                                mem_limit: vm_model.mem_limit,
                                 amount: vm_model.containers_amount,
                                 url: vm_model.api_url.to_string()
                             }
@@ -57,6 +60,7 @@ pub fn left_panel(cx: Scope) -> Element {
                                 name: vm,
                                 cpu: vm_model.cpu,
                                 mem: vm_model.mem,
+                                mem_limit: vm_model.mem_limit,
                                 amount: vm_model.containers_amount,
                                 url: vm_model.api_url.to_string()
                             }
@@ -85,6 +89,7 @@ pub fn left_panel(cx: Scope) -> Element {
                         name: "All VMs",
                         cpu: all_vms.cpu,
                         mem: all_vms.mem,
+                        mem_limit: all_vms.mem_limit,
                         amount: all_vms.containers_amount,
                         url: all_vms.api_url.to_string()
                     }
@@ -140,10 +145,12 @@ fn render_vm_menu_item<'s>(
     name: &'s str,
     cpu: f64,
     mem: i64,
+    mem_limit: i64,
     amount: usize,
     url: String,
 ) -> Element {
-    let mem = format_mem(*mem);
+    let mem = format_mem(mem);
+    let mem_limit = format_mem(mem_limit);
     render! {
         table {
             tr { title: "{url}",
@@ -154,7 +161,7 @@ fn render_vm_menu_item<'s>(
                         cpu_icon {}
                         span { font: "courier", style: "font-size:10px", ":{cpu:.3}  " }
                         memory_icon {}
-                        span { style: "font-size:10px", ":{mem}" }
+                        span { style: "font-size:10px", ":{mem}/{mem_limit}" }
                     }
                 }
             }

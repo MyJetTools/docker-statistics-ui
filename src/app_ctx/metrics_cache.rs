@@ -13,6 +13,7 @@ pub struct VmModel {
     pub api_url: String,
     pub cpu: f64,
     pub mem: i64,
+    pub mem_limit: i64,
     pub containers_amount: usize,
 }
 
@@ -218,6 +219,7 @@ impl MetricsCache {
         for (vm, wrapper) in read_access.iter() {
             let mut cpu = 0.0;
             let mut mem = 0;
+            let mut mem_limit = 0;
             let mut containers_amount = 0;
 
             for itm in wrapper.containers.values() {
@@ -227,6 +229,10 @@ impl MetricsCache {
 
                 if let Some(usage) = itm.mem.usage {
                     mem += usage;
+                }
+
+                if let Some(mem_limit_value) = itm.mem.limit {
+                    mem_limit += mem_limit_value;
                 }
 
                 if itm.enabled {
@@ -241,6 +247,7 @@ impl MetricsCache {
                     cpu,
                     mem,
                     containers_amount,
+                    mem_limit,
                 },
             );
         }
