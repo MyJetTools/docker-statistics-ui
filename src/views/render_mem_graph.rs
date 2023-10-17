@@ -26,13 +26,20 @@ pub fn render_mem_graph(cx: Scope, mem_limit: i64, values: Vec<i64>) -> Element 
         let y = v / mem_limit;
 
         let y = height_f64 - y * (height_f64 as f64);
+
+        let the_color = if v > mem_limit {
+            "rgb(0,0,255)"
+        } else {
+            "rgb(255,0,0)"
+        };
+
         items.push(rsx! {
             line {
                 x1: "{x}",
                 x2: "{x}",
                 y1: "{y}",
                 y2: "{HEIGHT}",
-                style: "stroke:rgb(0,0,255);stroke-width:1"
+                style: "stroke:{the_color};stroke-width:1"
             }
         });
         x += 1;
