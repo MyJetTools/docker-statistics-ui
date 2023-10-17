@@ -69,10 +69,16 @@ pub fn containers_list(cx: Scope) -> Element {
                     let (cpu_graph, mem_graph) = if &itm.id == show_graph.get() {
                         let cpu_snapshot = itm.cpu_usage_history.get_snapshot();
 
+                        let mem_limit = if let Some(usage) = itm.mem.limit {
+                            usage
+                        } else {
+                            0
+                        };
+
                         let mem_snapshot = itm.mem_usage_history.get_snapshot();
                         (
                             rsx! { render_cpu_graph{values: cpu_snapshot  }   },
-                            rsx! {div{render_mem_graph{values: mem_snapshot  } }},
+                            rsx! {div{render_mem_graph{values: mem_snapshot, mem_limit:mem_limit  } }},
                         )
                     } else {
                         (rsx! {div{}}, rsx! {div{}})
