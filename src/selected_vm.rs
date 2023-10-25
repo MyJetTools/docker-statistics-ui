@@ -20,4 +20,20 @@ impl SelectedVm {
             _ => false,
         }
     }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            SelectedVm::All => "***All***".to_string(),
+            SelectedVm::SingleVm(value) => value.to_string(),
+        }
+    }
+
+    #[cfg(feature = "ssr")]
+    pub fn from_string(value: String) -> Self {
+        if value == "***All***" {
+            return SelectedVm::All;
+        }
+
+        SelectedVm::SingleVm(value)
+    }
 }

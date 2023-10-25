@@ -1,13 +1,9 @@
+use dioxus::prelude::*;
+use dioxus_fullstack::prelude::*;
 use std::collections::BTreeMap;
 
-use dioxus::prelude::*;
-
 use crate::{
-    app_ctx::VmModel,
-    format_mem,
-    states::{MainState, SelectedVm},
-    views::icons::*,
-    APP_CTX,
+    format_mem, models::VmModel, selected_vm::SelectedVm, states::MainState, views::icons::*,
 };
 
 pub fn left_panel(cx: Scope) -> Element {
@@ -111,20 +107,11 @@ pub fn left_panel(cx: Scope) -> Element {
 
 fn read_loop(cx: &Scope, vms_state: &UseState<Option<BTreeMap<String, VmModel>>>) {
     let vms_state = vms_state.to_owned();
+
     cx.spawn(async move {
         let mut no = 0;
         loop {
-            let result = if no > 0 {
-                tokio::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-
-                    APP_CTX.metrics_cache.get_vm_cpu_and_mem().await
-                })
-                .await
-            } else {
-                tokio::spawn(async move { APP_CTX.metrics_cache.get_vm_cpu_and_mem().await }).await
-            };
-
+            let result = get_vm_cpu_and_mem(no).await;
             no += 1;
 
             match result {
@@ -132,7 +119,7 @@ fn read_loop(cx: &Scope, vms_state: &UseState<Option<BTreeMap<String, VmModel>>>
                     vms_state.set(Some(result));
                 }
                 Err(err) => {
-                    println!("Error: {:?}", err);
+                    println!("Error on get_vm_cpu_and_mem: {:?}", err);
                 }
             }
         }
@@ -167,4 +154,14 @@ fn render_vm_menu_item<'s>(
             }
         }
     }
+}
+
+#[server]
+async fn get_vm_cpu_and_mem(no: i32) -> Result<BTreeMap<String, VmModel>, ServerFnError> {
+    if no > 0 {
+        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+    }
+
+    let result = crate::APP_CTX.metrics_cache.get_vm_cpu_and_mem().await;
+    Ok(result)
 }

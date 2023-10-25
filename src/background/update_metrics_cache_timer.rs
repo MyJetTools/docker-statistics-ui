@@ -7,8 +7,7 @@ pub struct UpdateMetricsCacheTimer;
 #[async_trait::async_trait]
 impl MyTimerTick for UpdateMetricsCacheTimer {
     async fn tick(&self) {
-        let settings_reader = APP_CTX.get_settings_reader().await;
-        let urls = settings_reader.get_src_urls().await;
+        let urls = APP_CTX.settings.get_src_urls();
 
         for url in urls {
             let statistics = crate::http_client::get_statistics(url.clone()).await;

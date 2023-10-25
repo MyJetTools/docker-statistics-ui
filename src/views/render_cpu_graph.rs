@@ -1,8 +1,8 @@
 use dioxus::prelude::*;
 
-const HEIGHT: usize = 70;
+use crate::METRICS_HISTORY_SIZE;
 
-use crate::app_ctx::METRICS_HISTORY_SIZE;
+const HEIGHT: usize = 70;
 
 #[inline_props]
 pub fn render_cpu_graph(cx: Scope, values: Vec<f64>) -> Element {

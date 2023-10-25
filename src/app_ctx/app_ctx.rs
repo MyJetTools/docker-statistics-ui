@@ -1,40 +1,55 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use rust_extensions::AppStates;
-use tokio::sync::RwLock;
+use tokio::sync::Mutex;
 
-use crate::settings::SettingsReader;
+use crate::settings::SettingsModel;
 
-use super::MetricsCache;
-pub struct AppCtxInner {
-    settings_reader: Arc<SettingsReader>,
+use super::{MetricsCache, MetricsHistory};
+
+use crate::background::UpdateMetricsCacheTimer;
+use rust_extensions::MyTimer;
+pub struct MetricsHistoryWrapper {
+    pub cpu: MetricsHistory<f64>,
+    pub mem: MetricsHistory<i64>,
+}
+impl MetricsHistoryWrapper {
+    pub fn new() -> Self {
+        Self {
+            cpu: MetricsHistory::new(),
+            mem: MetricsHistory::new(),
+        }
+    }
 }
 
 pub struct AppCtx {
-    inner: RwLock<Option<Arc<AppCtxInner>>>,
     pub metrics_cache: MetricsCache,
     pub app_states: Arc<AppStates>,
+    pub settings: SettingsModel,
+
+    pub metrics_history: Mutex<HashMap<String, MetricsHistoryWrapper>>,
 }
 
 impl AppCtx {
     pub fn new() -> Self {
+        let settings = SettingsModel;
+
+        let app_states = Arc::new(AppStates::create_initialized());
+
+        let mut timer_5s = MyTimer::new(std::time::Duration::from_secs(5));
+
+        timer_5s.register_timer(
+            "MetricsUpdate",
+            std::sync::Arc::new(UpdateMetricsCacheTimer),
+        );
+
+        timer_5s.start(app_states.clone(), my_logger::LOGGER.clone());
+
         Self {
-            inner: RwLock::new(None),
             metrics_cache: MetricsCache::new(),
-            app_states: Arc::new(AppStates::create_initialized()),
+            app_states,
+            settings,
+            metrics_history: Mutex::new(HashMap::new()),
         }
-    }
-
-    pub async fn inject_settings(&self, settings_reader: Arc<SettingsReader>) {
-        let mut write_access = self.inner.write().await;
-
-        write_access.replace(Arc::new(AppCtxInner {
-            settings_reader: settings_reader,
-        }));
-    }
-
-    pub async fn get_settings_reader(&self) -> Arc<SettingsReader> {
-        let read_access = self.inner.read().await;
-        read_access.as_ref().unwrap().settings_reader.clone()
     }
 }

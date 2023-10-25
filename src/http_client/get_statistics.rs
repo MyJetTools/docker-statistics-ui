@@ -1,36 +1,6 @@
-use std::collections::BTreeMap;
-
 use flurl::IntoFlUrl;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-pub struct StatisticsContract {
-    pub vm: String,
-    pub containers: Vec<ContainerJsonModel>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct ContainerJsonModel {
-    pub id: String,
-    pub image: String,
-    pub names: Vec<String>,
-    pub labels: Option<BTreeMap<String, String>>,
-    pub enabled: bool,
-    pub cpu: CpuUsageJsonMode,
-    pub mem: MemUsageJsonMode,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct CpuUsageJsonMode {
-    pub usage: Option<f64>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct MemUsageJsonMode {
-    pub usage: Option<i64>,
-    pub available: Option<i64>,
-    pub limit: Option<i64>,
-}
+use crate::models::StatisticsContract;
 
 pub async fn get_statistics(url: String) -> Result<StatisticsContract, String> {
     let url_response = url

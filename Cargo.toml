@@ -5,40 +5,48 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = []
+ssr = [
+    "dioxus-fullstack/axum",
+    "rust-extensions",
+    "my-logger",
+    "async-trait",
+    "futures",
+    "lazy_static",
+    "serde_json",
+    "serde_yaml",
+    "flurl",
+    "tokio/full",
+
+]
+web = ["dioxus-fullstack/web"]
+
 [dependencies]
-my-settings-reader = { tag = "0.1.5", git = "https://github.com/MyJetTools/my-settings-reader.git", features = [
-    "background-reader",
-] }
-flurl = { tag = "0.4.0", git = "https://github.com/MyJetTools/fl-url.git" }
+rust-extensions = { tag = "0.1.4", git = "https://github.com/MyJetTools/rust-extensions.git", features = [
+    "with-tokio",
+], optional = true }
+my-logger = { tag = "1.0.3", git = "https://github.com/MyJetTools/my-logger.git", optional = true }
 
-rust-extensions = { tag = "0.1.3", git = "https://github.com/MyJetTools/rust-extensions.git" }
-my-logger = { tag = "0.2.1", git = "https://github.com/MyJetTools/my-logger.git" }
+dioxus-fullstack = { version = "*", features = ["router"] }
+dioxus = { version = "*" }
+dioxus-router-macro = "*"
+dioxus-router = "*"
+dioxus-web = { version = "*" }
+serde = "*"
+chrono = "*"
 
-settings-utils = { tag = "0.1.0", git = "https://github.com/MyJetTools/settings-utils.git" }
 
-
-dioxus = "*"
-dioxus-desktop = "*"
-dioxus-liveview = { varsion = "*", features = ["salvo"] }
-dioxus-fullstack = "*"
 dioxus-free-icons = { path = "./libs/icon-packages/lib", features = [
     "bootstrap",
     "ionicons",
 ] }
 
-
-tokio = { version = "*", features = ["full"] }
-serde = { version = "*", features = ["derive"] }
-serde_json = "*"
-serde_yaml = "*"
-futures = "*"
-tonic = { version = "*", features = ["tls", "tls-roots", "prost"] }
-anyhow = "*"
-prost = "*"
-prost-types = "*"
-fermi = "*"
-futures-util = "*"
-salvo = { version = "*", features = ["full", "affix", "ws"] }
-once_cell = "*"
-async-trait = "*"
-lazy_static = "*"
+tokio = { version = "*", features = ["time", "rt"] }
+serde_json = { version = "*", optional = true }
+serde_yaml = { version = "*", optional = true }
+futures = { version = "*", optional = true }
+async-trait = { version = "*", optional = true }
+lazy_static = { version = "*", optional = true }
+base64 = { version = "*" }
+flurl = { tag = "0.4.1", git = "https://github.com/MyJetTools/fl-url.git", optional = true }

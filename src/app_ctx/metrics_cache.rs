@@ -3,32 +3,10 @@ use std::collections::BTreeMap;
 use tokio::sync::RwLock;
 
 use crate::{
-    http_client::{ContainerJsonModel, CpuUsageJsonMode, MemUsageJsonMode},
-    states::SelectedVm,
+    models::{ContainerJsonModel, ContainerModel, MetricsByVm, VmModel},
+    selected_vm::SelectedVm,
+    APP_CTX,
 };
-
-use super::MetricsHistory;
-
-pub struct VmModel {
-    pub api_url: String,
-    pub cpu: f64,
-    pub mem: i64,
-    pub mem_limit: i64,
-    pub containers_amount: usize,
-}
-
-#[derive(Clone)]
-pub struct ContainerModel {
-    pub id: String,
-    pub image: String,
-    pub names: Vec<String>,
-    pub labels: Option<BTreeMap<String, String>>,
-    pub enabled: bool,
-    pub cpu: CpuUsageJsonMode,
-    pub mem: MemUsageJsonMode,
-    pub cpu_usage_history: MetricsHistory<f64>,
-    pub mem_usage_history: MetricsHistory<i64>,
-}
 
 #[derive(Clone)]
 pub struct ContainersWrapper {
@@ -46,62 +24,9 @@ impl Into<ContainerModel> for ContainerJsonModel {
             enabled: self.enabled,
             cpu: self.cpu,
             mem: self.mem,
-            cpu_usage_history: MetricsHistory::new(),
-            mem_usage_history: MetricsHistory::new(),
+            cpu_usage_history: None,
+            mem_usage_history: None,
         }
-    }
-}
-
-impl ContainerModel {
-    pub fn filter_me(&self, value: &str) -> bool {
-        if value == "" {
-            return true;
-        }
-
-        if self.id.contains(value) {
-            return true;
-        }
-
-        let value = value.to_lowercase();
-
-        if self.image.to_lowercase().contains(&value) {
-            return true;
-        }
-
-        for name in &self.names {
-            if name.to_lowercase().contains(&value) {
-                return true;
-            }
-        }
-
-        if let Some(labels) = &self.labels {
-            for (key, v) in labels {
-                if key.to_lowercase().contains(&value) {
-                    return true;
-                }
-
-                if v.to_lowercase().contains(&value) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    pub fn update(&mut self, src: ContainerJsonModel) {
-        if let Some(usage) = src.cpu.usage {
-            self.cpu_usage_history.add(usage);
-        }
-
-        if let Some(usage) = src.mem.usage {
-            self.mem_usage_history.add(usage);
-        }
-        self.cpu = src.cpu;
-        self.mem = src.mem;
-        self.labels = src.labels;
-        self.enabled = src.enabled;
-        self.image = src.image;
     }
 }
 
@@ -140,6 +65,22 @@ impl MetricsCache {
         remove_not_used_keys_keys(&mut by_vm.containers, &src);
 
         for (id, container) in src {
+            if let Some(usage) = container.cpu.usage {
+                let mut metrics_history = APP_CTX.metrics_history.lock().await;
+
+                if !metrics_history.contains_key(&id) {
+                    metrics_history.insert(id.to_string(), super::MetricsHistoryWrapper::new());
+                }
+
+                let wrapper = metrics_history.get_mut(&id).unwrap();
+
+                wrapper.cpu.add(usage);
+
+                if let Some(usage) = container.mem.usage {
+                    wrapper.mem.add(usage);
+                }
+            }
+
             if !by_vm.containers.contains_key(&id) {
                 by_vm.containers.insert(id.clone(), container.into());
             } else {
@@ -255,10 +196,7 @@ impl MetricsCache {
         result
     }
 
-    pub async fn get_metrics_by_vm(
-        &self,
-        selected_vm: &SelectedVm,
-    ) -> Vec<(Option<String>, String, ContainerModel)> {
+    pub async fn get_metrics_by_vm(&self, selected_vm: &SelectedVm) -> Vec<MetricsByVm> {
         let read_access = self.data.read().await;
 
         match selected_vm {
@@ -267,7 +205,11 @@ impl MetricsCache {
 
                 for (vm, wrapper) in read_access.iter() {
                     for itm in wrapper.containers.values() {
-                        result.push((Some(vm.to_string()), wrapper.api_url.clone(), itm.clone()));
+                        result.push(MetricsByVm {
+                            vm: Some(vm.to_string()),
+                            url: wrapper.api_url.clone(),
+                            container: itm.clone(),
+                        });
                     }
                 }
 
@@ -275,11 +217,14 @@ impl MetricsCache {
             }
             SelectedVm::SingleVm(vm) => match read_access.get(vm) {
                 Some(wrapper) => {
-                    let mut result: Vec<(Option<String>, String, ContainerModel)> =
-                        Vec::with_capacity(wrapper.containers.len());
+                    let mut result: Vec<MetricsByVm> = Vec::with_capacity(wrapper.containers.len());
 
                     for item in wrapper.containers.values() {
-                        result.push((None, wrapper.api_url.clone(), item.clone()));
+                        result.push(MetricsByVm {
+                            vm: None,
+                            url: wrapper.api_url.clone(),
+                            container: item.clone(),
+                        });
                     }
 
                     result

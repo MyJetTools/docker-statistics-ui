@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-
+use dioxus_fullstack::prelude::*;
 #[derive(Props, PartialEq, Eq)]
 pub struct ShowPopulatedYamlProps {
     pub url: String,
@@ -11,13 +11,19 @@ pub fn show_logs<'s>(cx: Scope<'s, ShowPopulatedYamlProps>) -> Element {
     let lines_amount = use_state(cx, || 100u32);
 
     if logs.is_empty() {
-        load_logs(
-            &cx,
-            logs,
-            cx.props.url.to_string(),
-            cx.props.container_id.to_string(),
-            *lines_amount.get(),
-        );
+        let url = cx.props.url.to_string();
+        let id = cx.props.container_id.to_string();
+        let lines_amount = *lines_amount.get();
+        let logs = logs.to_owned();
+
+        cx.spawn(async move {
+            let result = get_logs(url, id, lines_amount).await;
+
+            match result {
+                Ok(result) => logs.set(result),
+                Err(err) => logs.set(format!("Error during receiving logs: {:?}", err)),
+            }
+        });
 
         return render! {
             div { class: "modal-content", div { class: "form-control modal-content-full-screen", "Loading..." } }
@@ -41,13 +47,17 @@ pub fn show_logs<'s>(cx: Scope<'s, ShowPopulatedYamlProps>) -> Element {
                 button {
                     class: "btn btn-outline-secondary",
                     onclick: move |_| {
-                        load_logs(
-                            &cx,
-                            logs,
-                            cx.props.url.to_string(),
-                            cx.props.container_id.to_string(),
-                            *lines_amount.get(),
-                        );
+                        let url = cx.props.url.to_string();
+                        let id = cx.props.container_id.to_string();
+                        let lines_amount = *lines_amount.get();
+                        let logs = logs.to_owned();
+                        cx.spawn(async move {
+                            let result = get_logs(url, id, lines_amount).await;
+                            match result {
+                                Ok(result) => logs.set(result),
+                                Err(err) => logs.set(format!("Error during receiving logs: {:?}", err)),
+                            }
+                        });
                     },
                     "Request"
                 }
@@ -63,6 +73,7 @@ pub fn show_logs<'s>(cx: Scope<'s, ShowPopulatedYamlProps>) -> Element {
     }
 }
 
+/*
 fn load_logs<'s>(
     cx: &'s Scope<'s, ShowPopulatedYamlProps>,
     state: &UseState<String>,
@@ -74,7 +85,7 @@ fn load_logs<'s>(
 
     cx.spawn(async move {
         let mut lines = tokio::spawn(async move {
-            let result = crate::http_client::get_logs(url, container_id, lines_amount).await;
+            let result = get_logs(url, container_id, lines_amount).await;
 
             match result {
                 Ok(result) => result,
@@ -90,4 +101,20 @@ fn load_logs<'s>(
 
         state.set(lines);
     });
+}
+ */
+
+#[server]
+async fn get_logs(url: String, id: String, lines_amount: u32) -> Result<String, ServerFnError> {
+    let result = crate::http_client::get_logs(url, id, lines_amount).await;
+    let result = match result {
+        Ok(result) => result,
+        Err(err) => format!("Error during receiving logs: {:?}", err),
+    };
+
+    if result.len() == 0 {
+        return Ok("No Logs Received".to_string());
+    }
+
+    Ok(result)
 }

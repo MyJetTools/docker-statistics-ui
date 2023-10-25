@@ -1,14 +1,15 @@
-use serde::*;
+pub struct SettingsModel;
 
-#[derive(my_settings_reader::SettingsModel, Serialize, Deserialize, Debug, Clone)]
-pub struct SettingsModel {
-    pub src_urls: Vec<String>,
-    pub env_name: String,
+impl SettingsModel {
+    pub fn get_src_urls(&self) -> Vec<String> {
+        let urls = read_env_variable("SRC_URLS");
+        urls.split(";").map(|s| s.to_string()).collect()
+    }
 }
 
-impl SettingsReader {
-    pub async fn get_src_urls(&self) -> Vec<String> {
-        let read_access = self.settings.read().await;
-        return read_access.src_urls.clone();
+fn read_env_variable(name: &str) -> String {
+    match std::env::var(name) {
+        Ok(url) => return url,
+        Err(_) => panic!("{} is not set", name),
     }
 }

@@ -1,10 +1,8 @@
 use dioxus::prelude::*;
 
-use crate::format_mem;
+use crate::{format_mem, METRICS_HISTORY_SIZE};
 
 const HEIGHT: usize = 70;
-
-use crate::app_ctx::METRICS_HISTORY_SIZE;
 
 #[inline_props]
 pub fn render_mem_graph(cx: Scope, mem_limit: i64, values: Vec<i64>) -> Element {
