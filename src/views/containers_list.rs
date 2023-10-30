@@ -1,10 +1,8 @@
 use dioxus::prelude::*;
-use dioxus_fullstack::prelude::*;
 use super::icons::*;
 use crate::{
-    format_mem,
     states::{MainState, DialogState, DialogType},
-    views::{render_cpu_graph, render_mem_graph}, models::MetricsByVm,
+    views::{render_cpu_graph, render_mem_graph}, utils::format_mem,
 };
 
 pub fn containers_list(cx: Scope) -> Element {
@@ -16,6 +14,7 @@ pub fn containers_list(cx: Scope) -> Element {
     let show_disabled_state = use_state(cx, || false);
 
 
+    /*
     let loop_is_run = use_state(cx, || false);
 
 
@@ -23,7 +22,7 @@ pub fn containers_list(cx: Scope) -> Element {
         loop_is_run.set(true);
         load_containers(&cx, &main_state);
     }
-
+ */
     match main_state.read().get_containers() {
         Some(containers) => {
             let containers = containers
@@ -55,7 +54,6 @@ pub fn containers_list(cx: Scope) -> Element {
                     };
 
                     let id_cloned = itm.container.id.clone();
-                    let id_cloned_show_logs = itm.container.id.clone();
 
 
                     let url_show_logs = itm.url.clone();
@@ -116,7 +114,7 @@ pub fn containers_list(cx: Scope) -> Element {
                                                 .show_dialog(
                                                     format!("Logs of container {}", image_cloned),
                                                     DialogType::ShowLogs {
-                                                        container_id: id_cloned_show_logs.clone(),
+                                                        container_id: id_cloned.clone(),
                                                         url: url_show_logs.clone(),
                                                     },
                                                 );
@@ -204,6 +202,7 @@ pub fn containers_list(cx: Scope) -> Element {
     }
 }
 
+/*
 fn load_containers(cx: &Scope, main_state: &UseSharedState<MainState>) {
 
 
@@ -256,4 +255,4 @@ async fn get_metrics_by_vm(selected_vm: String, background:bool) -> Result<Vec<M
     }
 
     Ok(result)
-}
+} */

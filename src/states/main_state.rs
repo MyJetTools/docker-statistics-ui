@@ -1,6 +1,13 @@
-use crate::{models::MetricsByVm, selected_vm::SelectedVm};
+use std::collections::BTreeMap;
+
+use crate::{
+    models::{MetricsByVm, VmModel},
+    selected_vm::SelectedVm,
+};
 
 pub struct MainState {
+    pub env_name: String,
+    pub vms_state: Option<BTreeMap<String, VmModel>>,
     pub state_no: usize,
     pub data_request_no: i32,
     selected_vm: Option<SelectedVm>,
@@ -19,6 +26,8 @@ impl MainState {
             state_no: 0,
             dialog_is_shown: false,
             data_request_no: 0,
+            vms_state: None,
+            env_name: "".to_string(),
         }
     }
 

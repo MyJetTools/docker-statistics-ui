@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::{format_mem, METRICS_HISTORY_SIZE};
+use crate::{utils::format_mem, METRICS_HISTORY_SIZE};
 
 const HEIGHT: usize = 70;
 

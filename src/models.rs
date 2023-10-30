@@ -11,7 +11,7 @@ pub struct VmModel {
     pub containers_amount: usize,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ContainerModel {
     pub id: String,
     pub image: String,
@@ -88,19 +88,19 @@ pub struct StatisticsContract {
     pub containers: Vec<ContainerJsonModel>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CpuUsageJsonMode {
     pub usage: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MemUsageJsonMode {
     pub usage: Option<i64>,
     pub available: Option<i64>,
     pub limit: Option<i64>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MetricsByVm {
     pub vm: Option<String>,
     pub url: String,

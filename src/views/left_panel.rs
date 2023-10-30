@@ -1,18 +1,15 @@
 use dioxus::prelude::*;
-use dioxus_fullstack::prelude::*;
-use std::collections::BTreeMap;
 
 use crate::{
-    format_mem, models::VmModel, selected_vm::SelectedVm, states::MainState, views::icons::*,
+    models::VmModel, selected_vm::SelectedVm, states::MainState, utils::format_mem, views::icons::*,
 };
 
 pub fn left_panel(cx: Scope) -> Element {
-    let vms_state: &UseState<Option<BTreeMap<String, VmModel>>> = use_state(cx, || None);
     let env_name = use_state(cx, || "".to_string());
 
     let selected_vm_state = use_shared_state::<MainState>(cx).unwrap();
 
-    let selected_vm = selected_vm_state.read();
+    let selected_vm_read_access = selected_vm_state.read();
 
     let mut all_vms = VmModel {
         api_url: "".to_string(),
@@ -22,21 +19,24 @@ pub fn left_panel(cx: Scope) -> Element {
         containers_amount: 0,
     };
 
-    match vms_state.get() {
+    let vms_state = selected_vm_read_access.vms_state.as_ref();
+
+    match vms_state {
         Some(vms) => {
-            let items = vms.into_iter().map(|itm| {
-                let (vm, vm_model) = itm;
+            let items = vms.iter().map(|(vm, vm_model)| {
+
+                let vm = vm.to_string();
 
                 all_vms.cpu += vm_model.cpu;
                 all_vms.mem += vm_model.mem;
                 all_vms.containers_amount += vm_model.containers_amount;
                 all_vms.mem_limit += vm_model.mem_limit;
 
-                if selected_vm.is_single_vm_selected(vm) {
+                if selected_vm_read_access.is_single_vm_selected(&vm) {
                     rsx! {
                         div { class: "menu-item menu-active",
                             render_vm_menu_item {
-                                name: vm,
+                                name: vm.to_string(),
                                 cpu: vm_model.cpu,
                                 mem: vm_model.mem,
                                 mem_limit: vm_model.mem_limit,
@@ -53,7 +53,7 @@ pub fn left_panel(cx: Scope) -> Element {
                                 selected_vm_state.write().set_selected_vm(SelectedVm::SingleVm(vm.to_string()));
                             },
                             render_vm_menu_item {
-                                name: vm,
+                                name: vm.to_string(),
                                 cpu: vm_model.cpu,
                                 mem: vm_model.mem,
                                 mem_limit: vm_model.mem_limit,
@@ -69,7 +69,7 @@ pub fn left_panel(cx: Scope) -> Element {
 
             items.push(rsx! { hr {} });
 
-            let menu_active = if selected_vm.is_all_vms_selected() {
+            let menu_active = if selected_vm_read_access.is_all_vms_selected() {
                 "menu-active"
             } else {
                 ""
@@ -82,7 +82,7 @@ pub fn left_panel(cx: Scope) -> Element {
                         selected_vm_state.write().set_selected_vm(SelectedVm::All);
                     },
                     render_vm_menu_item {
-                        name: "All VMs",
+                        name: "All VMs".to_string(),
                         cpu: all_vms.cpu,
                         mem: all_vms.mem,
                         mem_limit: all_vms.mem_limit,
@@ -99,37 +99,15 @@ pub fn left_panel(cx: Scope) -> Element {
             };
         }
         None => {
-            read_loop(&cx, vms_state);
             return render! {"Loading..."};
         }
     }
 }
 
-fn read_loop(cx: &Scope, vms_state: &UseState<Option<BTreeMap<String, VmModel>>>) {
-    let vms_state = vms_state.to_owned();
-
-    cx.spawn(async move {
-        let mut no = 0;
-        loop {
-            let result = get_vm_cpu_and_mem(no).await;
-            no += 1;
-
-            match result {
-                Ok(result) => {
-                    vms_state.set(Some(result));
-                }
-                Err(err) => {
-                    println!("Error on get_vm_cpu_and_mem: {:?}", err);
-                }
-            }
-        }
-    })
-}
-
 #[inline_props]
-fn render_vm_menu_item<'s>(
+fn render_vm_menu_item(
     cx: Scope,
-    name: &'s str,
+    name: String,
     cpu: f64,
     mem: i64,
     mem_limit: i64,
@@ -154,14 +132,4 @@ fn render_vm_menu_item<'s>(
             }
         }
     }
-}
-
-#[server]
-async fn get_vm_cpu_and_mem(no: i32) -> Result<BTreeMap<String, VmModel>, ServerFnError> {
-    if no > 0 {
-        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-    }
-
-    let result = crate::APP_CTX.metrics_cache.get_vm_cpu_and_mem().await;
-    Ok(result)
 }
