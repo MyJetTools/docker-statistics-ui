@@ -61,7 +61,7 @@ impl ContainerModel {
         return false;
     }
 
-    #[cfg(feature = "ssr")]
+    #[cfg(feature = "server")]
     pub fn update(&mut self, src: ContainerJsonModel) {
         self.cpu = src.cpu;
         self.mem = src.mem;

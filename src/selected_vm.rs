@@ -28,7 +28,7 @@ impl SelectedVm {
         }
     }
 
-    #[cfg(feature = "ssr")]
+    #[cfg(feature = "server")]
     pub fn from_string(value: String) -> Self {
         if value == "***All***" {
             return SelectedVm::All;

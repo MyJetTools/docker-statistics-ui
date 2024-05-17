@@ -4,12 +4,12 @@ use crate::{utils::format_mem, METRICS_HISTORY_SIZE};
 
 const HEIGHT: usize = 70;
 
-#[inline_props]
-pub fn render_mem_graph(cx: Scope, mem_limit: i64, values: Vec<i64>) -> Element {
-    let mem_limit = if *mem_limit == 0 {
+#[component]
+pub fn render_mem_graph(mem_limit: i64, values: Vec<i64>) -> Element {
+    let mem_limit = if mem_limit == 0 {
         get_max_scale(&values)
     } else {
-        *mem_limit as f64
+        mem_limit as f64
     };
 
     let max_scale_text = format_mem(mem_limit as i64);
@@ -20,7 +20,7 @@ pub fn render_mem_graph(cx: Scope, mem_limit: i64, values: Vec<i64>) -> Element 
 
     let mut items = Vec::new();
     for v in values {
-        let v = *v as f64;
+        let v = v as f64;
         let y = v / mem_limit;
 
         let y = height_f64 - y * (height_f64 as f64);
@@ -43,7 +43,7 @@ pub fn render_mem_graph(cx: Scope, mem_limit: i64, values: Vec<i64>) -> Element 
         x += 1;
     }
 
-    render! {
+    rsx! {
         svg {
             width: "{METRICS_HISTORY_SIZE}",
             height: "{HEIGHT}",
@@ -54,10 +54,22 @@ pub fn render_mem_graph(cx: Scope, mem_limit: i64, values: Vec<i64>) -> Element 
                 style: "fill:none; stroke-width:1;stroke:rgb(0,0,0)"
             }
 
-            items.into_iter(),
+            {items.into_iter()},
 
-            text { x: "1", y: "11", fill: "white", style: "font-size:10px", "{max_scale_text}" }
-            text { x: "0", y: "10", fill: "black", style: "font-size:10px", max_scale_text }
+            text {
+                x: "1",
+                y: "11",
+                fill: "white",
+                style: "font-size:10px",
+                {max_scale_text.clone()}
+            }
+            text {
+                x: "0",
+                y: "10",
+                fill: "black",
+                style: "font-size:10px",
+                {max_scale_text}
+            }
         }
     }
 }

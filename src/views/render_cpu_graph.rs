@@ -4,8 +4,8 @@ use crate::METRICS_HISTORY_SIZE;
 
 const HEIGHT: usize = 70;
 
-#[inline_props]
-pub fn render_cpu_graph(cx: Scope, values: Vec<f64>) -> Element {
+#[component]
+pub fn render_cpu_graph(values: Vec<f64>) -> Element {
     let max_scale = get_max_scale(&values);
 
     let max_scale_text = format!("{:.6}", max_scale);
@@ -17,7 +17,7 @@ pub fn render_cpu_graph(cx: Scope, values: Vec<f64>) -> Element {
     let mut items = Vec::new();
     let h_f64 = HEIGHT as f64;
     for v in values {
-        let v = *v as f64;
+        let v = v as f64;
 
         let y = h_f64 - v / max_scale * h_f64;
         items.push(rsx! {
@@ -32,7 +32,7 @@ pub fn render_cpu_graph(cx: Scope, values: Vec<f64>) -> Element {
         x += 1;
     }
 
-    render! {
+    rsx! {
         svg {
             width: "{METRICS_HISTORY_SIZE}",
             height: "{HEIGHT}",
@@ -43,10 +43,22 @@ pub fn render_cpu_graph(cx: Scope, values: Vec<f64>) -> Element {
                 style: "fill:none; stroke-width:1;stroke:rgb(0,0,0)"
             }
 
-            items.into_iter(),
+            {items.into_iter()},
 
-            text { x: "1", y: "11", fill: "white", style: "font-size:10px", "{max_scale_text}" }
-            text { x: "0", y: "10", fill: "black", style: "font-size:10px", max_scale_text }
+            text {
+                x: "1",
+                y: "11",
+                fill: "white",
+                style: "font-size:10px",
+                {max_scale_text.clone()}
+            }
+            text {
+                x: "0",
+                y: "10",
+                fill: "black",
+                style: "font-size:10px",
+                {max_scale_text}
+            }
         }
     }
 }

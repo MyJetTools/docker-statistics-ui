@@ -5,13 +5,17 @@ use crate::{
     views::{render_cpu_graph, render_mem_graph}, utils::format_mem,
 };
 
-pub fn containers_list(cx: Scope) -> Element {
-    let main_state = use_shared_state::<MainState>(cx).unwrap();
+pub fn containers_list() -> Element {
+    let mut main_state = consume_context::<Signal<MainState>>();
 
 
-    let dialog_sate = use_shared_state::<DialogState>(cx).unwrap();
+    let mut dialog_sate = consume_context::<Signal<DialogState>>();
 
-    let show_disabled_state = use_state(cx, || false);
+
+    let mut show_disabled_state = use_signal( || false);
+
+
+    let show_disabled_state_value = *show_disabled_state.read();
 
 
     /*
@@ -23,12 +27,15 @@ pub fn containers_list(cx: Scope) -> Element {
         load_containers(&cx, &main_state);
     }
  */
-    match main_state.read().get_containers() {
+
+
+    let main_state_read_access = main_state.read();
+    match main_state_read_access.get_containers() {
         Some(containers) => {
             let containers = containers
                 .iter()
                 .filter(|itm| {
-                    if !show_disabled_state && !itm.container.enabled {
+                    if !show_disabled_state_value && !itm.container.enabled {
                         return false;
                     }
                     true
@@ -60,13 +67,16 @@ pub fn containers_list(cx: Scope) -> Element {
 
                     let vm_name = if let Some(vm_name) = &itm.vm {
                         rsx! {
-                            div { title: "{vm_name}",
+                            div {
+                                div { "{vm_name}" }
                                 server_icon_16 {}
                                 span { "{itm.url}" }
                             }
                         }   
                     } else {
-                        rsx! { div {} }
+                        rsx! {
+                            div {}
+                        }
                     };
 
 
@@ -82,21 +92,37 @@ pub fn containers_list(cx: Scope) -> Element {
 
                         let mem_snapshot = itm.container.mem_usage_history.as_ref().unwrap();
                         (
-                            rsx! { render_cpu_graph{values: cpu_snapshot.clone()  }   },
-                            rsx! {div{render_mem_graph{values: mem_snapshot.clone(), mem_limit:mem_limit  } }},
+                            rsx! {
+                                render_cpu_graph { values: cpu_snapshot.clone() }
+                            },
+                            rsx! {
+                                div {
+                                    render_mem_graph { values: mem_snapshot.clone(), mem_limit }
+                                }
+                            },
                         )
                     } else {
-                        (rsx! {div{}}, rsx! {div{}})
+                        (rsx! {
+                            div {}
+                        }, rsx! {
+                            div {}
+                        })
                     };
 
                     let items = if let Some(labels) = &itm.container.labels {
                         let items = labels.iter().map(|(key, value)| {
-                            rsx! { div { style: "font-size:10px; padding:0", "{key}={value}" } }
+                            rsx! {
+                                div { style: "font-size:10px; padding:0", "{key}={value}" }
+                            }
                         });
 
-                        rsx! {items}
+                        rsx! {
+                            {items}
+                        }
                     } else {
-                        rsx! { div {} }
+                        rsx! {
+                            div {}
+                        }
                     };
 
                     let image_cloned = itm.container.image.clone();
@@ -104,7 +130,7 @@ pub fn containers_list(cx: Scope) -> Element {
                         tr { style: "border-top: 1px solid lightgray; color: {color}",
                             td {
                                 div { "{itm.container.image}" }
-                                div { vm_name }
+                                div { {vm_name} }
                                 div {
                                     button {
                                         class: "btn btn-sm btn-primary",
@@ -123,22 +149,25 @@ pub fn containers_list(cx: Scope) -> Element {
                                     }
                                 }
                             }
-                            td { items }
+                            td { {items} }
 
                             td {
-                                div { style: "cursor:pointer; padding:0", cpu_icon(cx), ": {cpu_usage}" }
-                                div { style: "padding:0", cpu_graph }
+                                div { style: "cursor:pointer; padding:0",
+                                    {cpu_icon()},
+                                    ": {cpu_usage}"
+                                }
+                                div { style: "padding:0", {cpu_graph} }
                                 div { style: "cursor:pointer;padding:0;font-size: 12px; margin-top: 5px;",
-                                    memory_icon(cx),
+                                    {memory_icon()},
                                     ": {mem_usage}/{mem_limit}"
                                 }
-                                div { style: "padding:0", mem_graph }
+                                div { style: "padding:0", {mem_graph} }
                             }
                         }
                     }
                 });
 
-            let show_disabled = if *show_disabled_state.get() {
+            let show_disabled = if show_disabled_state_value {
                 rsx! {
                     button {
                         style: "width: 110px;",
@@ -163,9 +192,9 @@ pub fn containers_list(cx: Scope) -> Element {
                 }
             };
 
-            let selected_value = main_state.read().filter.to_string();
+            let selected_value = main_state.read().get_filter().to_string();
 
-            render! {
+            rsx! {
                 table { class: "table table-striped", style: "text-align: left;",
                     tr {
                         th { colspan: 2,
@@ -178,26 +207,26 @@ pub fn containers_list(cx: Scope) -> Element {
                                             input {
                                                 class: "form-control form-control-sm",
                                                 value: "{selected_value}",
-                                                oninput: move |cx| {
-                                                    main_state.write().filter = cx.value.to_string();
-                                                }
+                                                oninput: move |cx| { main_state.write().set_filter(cx.value().to_string()) }
                                             }
                                         }
                                     }
-                                    td { show_disabled }
+                                    td { {show_disabled} }
                                 }
                             }
                         }
                         th { "Cpu/Mem" }
                     }
 
-                    containers.into_iter()
+                    {containers.into_iter()}
                 }
             }
         }
         None => {
 
-            render! { div {} }
+            rsx! {
+                div {}
+            }
         }
     }
 }

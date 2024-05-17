@@ -4,12 +4,14 @@ use crate::{
     models::VmModel, selected_vm::SelectedVm, states::MainState, utils::format_mem, views::icons::*,
 };
 
-pub fn left_panel(cx: Scope) -> Element {
-    let env_name = use_state(cx, || "".to_string());
+pub fn left_panel() -> Element {
+    let env_name = use_signal(|| "".to_string());
 
-    let selected_vm_state = use_shared_state::<MainState>(cx).unwrap();
+    let mut selected_vm_state = consume_context::<Signal<MainState>>();
 
     let selected_vm_read_access = selected_vm_state.read();
+
+    let env_name_value = env_name.read().clone();
 
     let mut all_vms = VmModel {
         api_url: "".to_string(),
@@ -67,7 +69,9 @@ pub fn left_panel(cx: Scope) -> Element {
 
             let mut items: Vec<_> = items.collect();
 
-            items.push(rsx! { hr {} });
+            items.push(rsx! {
+                hr {}
+            });
 
             let menu_active = if selected_vm_read_access.is_all_vms_selected() {
                 "menu-active"
@@ -92,21 +96,20 @@ pub fn left_panel(cx: Scope) -> Element {
                 }
             });
 
-            return render! {
+            return rsx! {
                 h1 { "Dockers" }
-                h4 { id: "env-type", "{env_name.get()}" }
-                items.into_iter()
+                h4 { id: "env-type", "{env_name_value}" }
+                {items.into_iter()}
             };
         }
         None => {
-            return render! {"Loading..."};
+            return rsx! { "Loading..." };
         }
     }
 }
 
-#[inline_props]
+#[component]
 fn render_vm_menu_item(
-    cx: Scope,
     name: String,
     cpu: f64,
     mem: i64,
@@ -114,14 +117,16 @@ fn render_vm_menu_item(
     amount: usize,
     url: String,
 ) -> Element {
-    let mem = format_mem(*mem);
-    let mem_limit = format_mem(*mem_limit);
-    render! {
+    let mem = format_mem(mem);
+    let mem_limit = format_mem(mem_limit);
+    rsx! {
         table {
             tr { title: "{url}",
                 td { server_icon {} }
                 td {
-                    div { span { style: "font-size:12px", "{name}: ({amount})" } }
+                    div {
+                        span { style: "font-size:12px", "{name}: ({amount})" }
+                    }
                     div {
                         cpu_icon {}
                         span { font: "courier", style: "font-size:10px", ":{cpu:.3}  " }

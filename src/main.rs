@@ -1,24 +1,21 @@
 #![allow(non_snake_case)]
 
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, time::Duration};
 
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 use app_ctx::AppCtx;
 
 use dioxus::prelude::*;
-use dioxus_fullstack::prelude::*;
 use models::{MetricsByVm, VmModel};
-use router::AppRoute;
 
-mod router;
 mod selected_vm;
 mod utils;
 
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 mod app_ctx;
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 mod background;
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 mod settings;
 mod states;
 
@@ -27,12 +24,12 @@ mod views;
 
 use serde::*;
 use views::*;
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 mod http_client;
 
 use crate::states::*;
 
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 lazy_static::lazy_static! {
     pub static ref APP_CTX: AppCtx = {
         AppCtx::new()
@@ -42,39 +39,35 @@ lazy_static::lazy_static! {
 pub const METRICS_HISTORY_SIZE: usize = 150;
 
 fn main() {
-    let config = LaunchBuilder::<FullstackRouterConfig<AppRoute>>::router();
+    let cfg = dioxus::fullstack::Config::new();
 
-    #[cfg(feature = "ssr")]
-    let config = config.addr(std::net::SocketAddr::from(([0, 0, 0, 0], 8080)));
+    #[cfg(feature = "server")]
+    let cfg = cfg.addr(([0, 0, 0, 0], 9001));
 
-    config.launch();
+    LaunchBuilder::fullstack().with_cfg(cfg).launch(app)
 }
 
-fn Home(cx: Scope) -> Element {
-    use_shared_state_provider(cx, || MainState::new());
-    use_shared_state_provider(cx, || DialogState::Hidden);
-    let started = use_state(cx, || false);
+fn app() -> Element {
+    use_context_provider(|| Signal::new(MainState::new()));
 
-    let content = if !started.get() {
+    use_context_provider(|| Signal::new(DialogState::Hidden));
+
+    let mut started = use_signal(|| false);
+
+    let started_value = *started.read();
+
+    let content = if !started_value {
         rsx! {
             div {
+
                 id: "layout",
-                onmounted: move |_| {
-                    if !started.get() {
-                        started.set(true);
-                        read_loop(&cx);
-                    }
-                },
-                onmousemove: move |_| {
-                    if !started.get() {
-                        started.set(true);
-                        read_loop(&cx);
-                    }
-                }
+                onmounted: move |_| {},
+                onmousemove: move |_| {}
             }
         }
     } else {
         rsx! {
+
             div { id: "layout",
 
                 div { id: "left-panel", left_panel {} }
@@ -84,31 +77,36 @@ fn Home(cx: Scope) -> Element {
         }
     };
 
-    render! {content}
+    if !started_value {
+        started.set(true);
+        read_loop();
+    }
+
+    content
 }
 
-pub fn read_loop(cx: &Scope) {
-    let main_state = use_shared_state::<MainState>(cx).unwrap().to_owned();
+pub fn read_loop() {
+    let mut main_state = consume_context::<Signal<MainState>>();
 
-    let create_eval = use_eval(cx);
+    /*
+       let create_eval = use_eval(cx);
 
-    let eval = create_eval(
-        r#"
-        console.log("Hello from JavaScript!");
+       let eval = create_eval(
+           r#"
+           console.log("Hello from JavaScript!");
 
-        dioxus.send("");
+           dioxus.send("");
 
-        setInterval(function(){
-            dioxus.send("");
-        }, 1000);
-        "#,
-    )
-    .unwrap();
+           setInterval(function(){
+               dioxus.send("");
+           }, 1000);
+           "#,
+       )
+       .unwrap();
+    */
 
-    cx.spawn(async move {
+    spawn(async move {
         loop {
-            eval.recv().await.unwrap();
-
             let selected_vm = match main_state.read().get_selected_vm() {
                 Some(selected_vm) => selected_vm.to_string(),
                 None => "".to_string(),
@@ -118,18 +116,19 @@ pub fn read_loop(cx: &Scope) {
 
             match result {
                 Ok(result) => {
-                    let mut write_access = main_state.write();
-                    write_access.vms_state = Some(result.vms);
+                    main_state.write().vms_state = Some(result.vms);
                     if let Some(metrics) = result.metrics {
-                        write_access.set_containers(metrics);
+                        main_state.write().set_containers(metrics);
                     }
                 }
                 Err(err) => {
                     println!("Error on get_vm_cpu_and_mem: {:?}", err);
                 }
             }
+
+            let _ = sleep().await;
         }
-    })
+    });
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -162,4 +161,11 @@ async fn get_vm_cpu_and_mem(selected_vm: String) -> Result<RequestApiModel, Serv
     }
 
     Ok(RequestApiModel { vms, metrics })
+}
+
+#[server]
+async fn sleep() -> Result<(), ServerFnError> {
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    Ok(())
 }

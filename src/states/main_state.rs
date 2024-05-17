@@ -12,7 +12,7 @@ pub struct MainState {
     pub data_request_no: i32,
     selected_vm: Option<SelectedVm>,
     containers: Option<Vec<MetricsByVm>>,
-    pub filter: String,
+    filter: String,
 
     pub dialog_is_shown: bool,
 }
@@ -76,5 +76,13 @@ impl MainState {
 
     pub fn set_containers(&mut self, containers: Vec<MetricsByVm>) {
         self.containers = Some(containers);
+    }
+
+    pub fn set_filter(&mut self, value: String) {
+        self.filter = value;
+    }
+
+    pub fn get_filter(&self) -> &str {
+        &self.filter
     }
 }
