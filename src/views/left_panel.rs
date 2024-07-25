@@ -11,6 +11,18 @@ pub fn left_panel() -> Element {
 
     let selected_vm_read_access = selected_vm_state.read();
 
+    let envs_options = if let Some(envs) = selected_vm_read_access.envs.as_ref() {
+        envs.clone().into_iter().map(|env| {
+            rsx! {
+                option { {env } }
+            }
+        })
+    } else {
+        return rsx! {
+            option {}
+        };
+    };
+
     let env_name_value = env_name.read().clone();
 
     let mut all_vms = VmModel {
@@ -97,6 +109,14 @@ pub fn left_panel() -> Element {
             });
 
             return rsx! {
+                select {
+                    class: "form-select",
+                    oninput: |ctx| {
+                        let value = ctx.value();
+                        consume_context::<Signal<MainState>>().write().set_active_env(value);
+                    },
+                    {envs_options}
+                }
                 h1 { "Dockers" }
                 h4 { id: "env-type", "{env_name_value}" }
                 {items.into_iter()}

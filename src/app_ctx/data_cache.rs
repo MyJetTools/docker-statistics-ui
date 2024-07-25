@@ -1,12 +1,24 @@
-use std::collections::BTreeMap;
-
-use tokio::sync::RwLock;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::{
     models::{ContainerJsonModel, ContainerModel, MetricsByVm, VmModel},
     selected_vm::SelectedVm,
-    APP_CTX,
 };
+
+use super::MetricsHistory;
+
+pub struct MetricsHistoryWrapper {
+    pub cpu: MetricsHistory<f64>,
+    pub mem: MetricsHistory<i64>,
+}
+impl MetricsHistoryWrapper {
+    pub fn new() -> Self {
+        Self {
+            cpu: MetricsHistory::new(),
+            mem: MetricsHistory::new(),
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct ContainersWrapper {
@@ -26,32 +38,33 @@ impl Into<ContainerModel> for ContainerJsonModel {
             mem: self.mem,
             cpu_usage_history: None,
             mem_usage_history: None,
+            ports: self.ports,
         }
     }
 }
 
-pub struct MetricsCache {
-    data: RwLock<BTreeMap<String, ContainersWrapper>>,
+pub struct DataCache {
+    containers: BTreeMap<String, ContainersWrapper>,
+    pub metrics_history: HashMap<String, MetricsHistoryWrapper>,
 }
 
-impl MetricsCache {
+impl DataCache {
     pub fn new() -> Self {
         Self {
-            data: RwLock::new(BTreeMap::new()),
+            containers: BTreeMap::new(),
+            metrics_history: HashMap::new(),
         }
     }
 
-    pub async fn update(&self, vm: &str, containers: Vec<ContainerJsonModel>, api_url: String) {
+    pub fn update(&mut self, vm: &str, containers: Vec<ContainerJsonModel>, api_url: String) {
         let mut src = BTreeMap::new();
 
         for container in containers {
             src.insert(container.id.clone(), container);
         }
 
-        let mut write_access = self.data.write().await;
-
-        if !write_access.contains_key(vm) {
-            write_access.insert(
+        if !self.containers.contains_key(vm) {
+            self.containers.insert(
                 vm.to_string(),
                 ContainersWrapper {
                     api_url,
@@ -60,19 +73,18 @@ impl MetricsCache {
             );
         }
 
-        let by_vm = write_access.get_mut(vm).unwrap();
+        let by_vm = self.containers.get_mut(vm).unwrap();
 
         remove_not_used_keys_keys(&mut by_vm.containers, &src);
 
         for (id, container) in src {
             if let Some(usage) = container.cpu.usage {
-                let mut metrics_history = APP_CTX.metrics_history.lock().await;
-
-                if !metrics_history.contains_key(&id) {
-                    metrics_history.insert(id.to_string(), super::MetricsHistoryWrapper::new());
+                if !self.metrics_history.contains_key(&id) {
+                    self.metrics_history
+                        .insert(id.to_string(), MetricsHistoryWrapper::new());
                 }
 
-                let wrapper = metrics_history.get_mut(&id).unwrap();
+                let wrapper = self.metrics_history.get_mut(&id).unwrap();
 
                 wrapper.cpu.add(usage);
 
@@ -90,12 +102,10 @@ impl MetricsCache {
         }
     }
 
-    pub async fn get_containers(&self) -> BTreeMap<String, Vec<ContainerModel>> {
-        let read_access = self.data.read().await;
-
+    pub fn get_containers(&self) -> BTreeMap<String, Vec<ContainerModel>> {
         let mut result = BTreeMap::new();
 
-        for (vm, items) in read_access.iter() {
+        for (vm, items) in self.containers.iter() {
             let mut vm_result = Vec::with_capacity(items.containers.len());
 
             for itm in items.containers.values() {
@@ -108,10 +118,10 @@ impl MetricsCache {
         result
     }
 
-    pub async fn get_cpu_by_vm_and_container(&self) -> BTreeMap<String, BTreeMap<String, f64>> {
+    pub fn get_cpu_by_vm_and_container(&self) -> BTreeMap<String, BTreeMap<String, f64>> {
         let mut result = BTreeMap::new();
 
-        for (vm, wrapper) in self.data.read().await.iter() {
+        for (vm, wrapper) in self.containers.iter() {
             let mut vm_result = BTreeMap::new();
 
             for itm in wrapper.containers.values() {
@@ -130,10 +140,10 @@ impl MetricsCache {
         result
     }
 
-    pub async fn get_mem_by_vm_and_container(&self) -> BTreeMap<String, BTreeMap<String, i64>> {
+    pub fn get_mem_by_vm_and_container(&self) -> BTreeMap<String, BTreeMap<String, i64>> {
         let mut result = BTreeMap::new();
 
-        for (vm, wrapper) in self.data.read().await.iter() {
+        for (vm, wrapper) in self.containers.iter() {
             let mut vm_result = BTreeMap::new();
 
             for itm in wrapper.containers.values() {
@@ -152,12 +162,10 @@ impl MetricsCache {
         result
     }
 
-    pub async fn get_vm_cpu_and_mem(&self) -> BTreeMap<String, VmModel> {
+    pub fn get_vm_cpu_and_mem(&self) -> BTreeMap<String, VmModel> {
         let mut result = BTreeMap::new();
 
-        let read_access = self.data.read().await;
-
-        for (vm, wrapper) in read_access.iter() {
+        for (vm, wrapper) in self.containers.iter() {
             let mut cpu = 0.0;
             let mut mem = 0;
             let mut mem_limit = 0;
@@ -196,14 +204,12 @@ impl MetricsCache {
         result
     }
 
-    pub async fn get_metrics_by_vm(&self, selected_vm: &SelectedVm) -> Vec<MetricsByVm> {
-        let read_access = self.data.read().await;
-
+    pub fn get_metrics_by_vm(&self, selected_vm: &SelectedVm) -> Vec<MetricsByVm> {
         match selected_vm {
             SelectedVm::All => {
                 let mut result = Vec::new();
 
-                for (vm, wrapper) in read_access.iter() {
+                for (vm, wrapper) in self.containers.iter() {
                     for itm in wrapper.containers.values() {
                         result.push(MetricsByVm {
                             vm: Some(vm.to_string()),
@@ -215,7 +221,7 @@ impl MetricsCache {
 
                 result
             }
-            SelectedVm::SingleVm(vm) => match read_access.get(vm) {
+            SelectedVm::SingleVm(vm) => match self.containers.get(vm) {
                 Some(wrapper) => {
                     let mut result: Vec<MetricsByVm> = Vec::with_capacity(wrapper.containers.len());
 

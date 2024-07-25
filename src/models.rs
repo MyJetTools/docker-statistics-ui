@@ -11,6 +11,17 @@ pub struct VmModel {
     pub containers_amount: usize,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PortHttpModel {
+    pub ip: Option<String>,
+    #[serde(rename = "privatePort")]
+    pub private_port: u16,
+    #[serde(rename = "publicPort")]
+    pub public_port: Option<u16>,
+    #[serde(rename = "portType")]
+    pub port_type: String,
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ContainerModel {
     pub id: String,
@@ -22,6 +33,8 @@ pub struct ContainerModel {
     pub mem: MemUsageJsonMode,
     pub cpu_usage_history: Option<Vec<f64>>,
     pub mem_usage_history: Option<Vec<i64>>,
+
+    pub ports: Option<Vec<PortHttpModel>>,
 }
 
 impl ContainerModel {
@@ -80,6 +93,7 @@ pub struct ContainerJsonModel {
     pub enabled: bool,
     pub cpu: CpuUsageJsonMode,
     pub mem: MemUsageJsonMode,
+    pub ports: Option<Vec<PortHttpModel>>,
 }
 
 #[derive(Serialize, Deserialize)]

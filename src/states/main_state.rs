@@ -6,7 +6,8 @@ use crate::{
 };
 
 pub struct MainState {
-    pub env_name: String,
+    pub selected_env: String,
+    pub envs: Option<Vec<String>>,
     pub vms_state: Option<BTreeMap<String, VmModel>>,
     pub state_no: usize,
     pub data_request_no: i32,
@@ -21,14 +22,28 @@ impl MainState {
     pub fn new() -> Self {
         Self {
             selected_vm: None,
+            envs: None,
             containers: None,
             filter: "".to_string(),
             state_no: 0,
             dialog_is_shown: false,
             data_request_no: 0,
             vms_state: None,
-            env_name: "".to_string(),
+            selected_env: "".to_string(),
         }
+    }
+
+    pub fn has_envs(&self) -> bool {
+        self.envs.is_some()
+    }
+
+    pub fn set_active_env(&mut self, env: String) {
+        self.selected_env = env;
+    }
+
+    pub fn set_environments(&mut self, envs: Vec<String>) {
+        self.selected_env = envs[0].clone();
+        self.envs = Some(envs);
     }
 
     pub fn set_selected_vm(&mut self, selected_vm: SelectedVm) {
@@ -55,8 +70,8 @@ impl MainState {
         }
     }
 
-    pub fn get_selected_vm(&self) -> Option<SelectedVm> {
-        self.selected_vm.clone()
+    pub fn get_selected_vm(&self) -> (String, Option<SelectedVm>) {
+        (self.selected_env.to_string(), self.selected_vm.clone())
     }
 
     pub fn get_containers(&self) -> Option<Vec<&MetricsByVm>> {

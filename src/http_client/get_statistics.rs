@@ -1,23 +1,13 @@
-use flurl::IntoFlUrl;
+use flurl::{FlUrl, FlUrlError};
 
 use crate::models::StatisticsContract;
 
-pub async fn get_statistics(url: String) -> Result<StatisticsContract, String> {
-    let url_response = url
+pub async fn get_statistics(fl_url: FlUrl) -> Result<StatisticsContract, FlUrlError> {
+    let mut url_response = fl_url
         .append_path_segment("api")
         .append_path_segment("containers")
         .get()
-        .await;
+        .await?;
 
-    if let Err(err) = &url_response {
-        return Err(format!("Error: {:?}", err));
-    };
-
-    let result = url_response.unwrap().get_json().await;
-
-    if let Err(err) = &result {
-        return Err(format!("Error: {:?}", err));
-    };
-
-    Ok(result.unwrap())
+    url_response.get_json().await
 }

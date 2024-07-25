@@ -42,6 +42,43 @@ pub fn containers_list() -> Element {
                 })
                 .map(|itm| {
                     let color = if itm.container.enabled { "black" } else { "lightgray" };
+
+
+                    let mut ports_to_render = Vec::new();
+
+                     if let Some(ports) = itm.container.ports.as_ref() {
+                        
+
+                        for port in ports{
+
+
+                            let public_port = if let Some(public_port) = port.public_port{
+                                let ip = port.ip.clone().unwrap_or("*".to_string());
+                                format!("{}:{}", ip, public_port)
+    
+                            }else{
+                                "".to_string()
+                            };
+
+                            ports_to_render.push(rsx!{
+                                div { style: "padding: 2px 10px;",
+                                    span {
+                                        class: "badge text-bg-secondary",
+                                        style: "border-radius: 5px 0px 0px 5px;",
+                                        "{port.port_type} {public_port}"
+                                    }
+
+                                    span {
+                                        class: "badge text-bg-dark",
+                                        style: "border-radius: 0px 5px 5px 0px;",
+                                        " << {port.private_port}"
+                                    }
+                                }
+                            });
+                        }
+
+                    }
+
                     let cpu_usage = if let Some(usage) = itm.container.cpu.usage {
                         format!("{:.3}", usage)
                     } else {
@@ -148,6 +185,7 @@ pub fn containers_list() -> Element {
                                         "Show logs"
                                     }
                                 }
+                                {ports_to_render.into_iter()}
                             }
                             td { {items} }
 
