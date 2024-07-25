@@ -27,7 +27,7 @@ impl MyTimerTick for UpdateMetricsCacheTimer {
 
                     let statistics = statistics.unwrap();
 
-                    println!("Loaded env:{}. Url; {}", env, url);
+                    println!("Loaded env:{}. Url: {}", env, url);
 
                     APP_CTX.data_cache_by_env.lock().await.update(
                         &env,

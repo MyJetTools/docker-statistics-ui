@@ -40,7 +40,7 @@ pub async fn parse_url<'s>(
     }
 
     let ssh_id = extract_ssh_id(url_left_part.unwrap());
-    println!("ssh_id: {}", ssh_id);
+    //println!("ssh_id: {}", ssh_id);
 
     let ssh_items = url_left_part.unwrap().split("@").collect::<Vec<_>>();
 

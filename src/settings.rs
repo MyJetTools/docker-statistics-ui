@@ -1,6 +1,7 @@
 use std::{
     collections::{BTreeMap, HashMap},
     sync::Arc,
+    time::Duration,
 };
 
 use flurl::{my_ssh::SshCredentials, FlUrl};
@@ -70,10 +71,14 @@ impl VmSettingsModel {
     ) -> (String, FlUrl) {
         let (ssh_credentials, url) = self.get_url(ssh_credentials).await;
 
-        let mut fl_url = FlUrl::new(url.as_str());
+        let mut fl_url = FlUrl::new(url.as_str())
+            .do_not_reuse_connection()
+            .set_timeout(Duration::from_secs(5));
 
         if let Some(ssh_credentials) = ssh_credentials {
-            fl_url = fl_url.set_ssh_credentials(ssh_credentials);
+            fl_url = fl_url
+                .set_ssh_credentials(Arc::new(ssh_credentials))
+                .set_ssh_sessions_cache(crate::APP_CTX.fl_url_ssh_cache.clone());
         }
 
         return (url, fl_url);
