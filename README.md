@@ -6,6 +6,21 @@
 ~/.docker-statistics-ui
 
 
+
+```yaml
+envs:
+  env-1:
+  - url: http://10.0.0.2:7999
+  - url: http://10.0.0.3:7999
+  - url: http://10.0.0.4:7999
+
+  env-2:
+  - url: http://10.0.1.2:7999
+  - url: http://10.0.1.3:7999
+  - url: http://10.0.1.4:7999
+```
+
+
 ```yaml
 envs:
   env-1:
