@@ -20,7 +20,7 @@ impl AppCtx {
     pub fn new() -> Self {
         let app_states = Arc::new(AppStates::create_initialized());
 
-        let mut timer_5s = MyTimer::new(std::time::Duration::from_secs(1));
+        let mut timer_5s = MyTimer::new(std::time::Duration::from_secs(3));
 
         timer_5s.register_timer(
             "MetricsUpdate",
