@@ -61,7 +61,7 @@ impl VmSettingsModel {
         &self,
         ssh_credentials: Option<&HashMap<String, SshCredentialsSettingsModel>>,
     ) -> (Option<SshCredentials>, String) {
-        super::ssh_settings::parse_url(self.url.as_str(), ssh_credentials).await
+        super::ssh_settings::parse_url(self.url.as_str(), ssh_credentials.into()).await
     }
 
     pub async fn get_fl_url(
