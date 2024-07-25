@@ -39,8 +39,8 @@ pub async fn parse_url(
         panic!("Invalid ssh url '{}'", url);
     }
 
-    let ssh_line = extract_ssh_line(url_left_part.unwrap());
-    println!("ssh_line: {}", ssh_line);
+    let ssh_id = extract_ssh_id(url_left_part.unwrap());
+    println!("ssh_id: {}", ssh_id);
 
     let ssh_items = url_left_part.unwrap().split("@").collect::<Vec<_>>();
 
@@ -53,7 +53,7 @@ pub async fn parse_url(
     let ssh_user_name = left_part.remove(1).to_string();
 
     if let Some(ssh_credentials) = ssh_credentials {
-        if let Some(ssh_credentials) = ssh_credentials.get(ssh_line) {
+        if let Some(ssh_credentials) = ssh_credentials.get(ssh_id) {
             let private_key = SSH_CERTS_CACHE
                 .get_cert(ssh_credentials.cert_path.as_str())
                 .await;
@@ -79,9 +79,9 @@ pub async fn parse_url(
     (Some(ssh_credentials), url_right_part.unwrap().to_string())
 }
 
-fn extract_ssh_line(ssh_part: &str) -> &str {
+fn extract_ssh_id(ssh_part: &str) -> &str {
     match ssh_part.find(":") {
-        Some(index) => &ssh_part[..index],
+        Some(index) => &ssh_part[index + 1..],
         None => ssh_part,
     }
 }
