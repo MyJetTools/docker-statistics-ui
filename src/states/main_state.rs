@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, rc::Rc};
 
 use crate::{
     models::{MetricsByVm, VmModel},
@@ -6,8 +6,8 @@ use crate::{
 };
 
 pub struct MainState {
-    pub selected_env: String,
-    pub envs: Option<Vec<String>>,
+    pub selected_env: Rc<String>,
+    pub envs: Option<Vec<Rc<String>>>,
     pub vms_state: Option<BTreeMap<String, VmModel>>,
     pub state_no: usize,
     pub data_request_no: i32,
@@ -29,7 +29,7 @@ impl MainState {
             dialog_is_shown: false,
             data_request_no: 0,
             vms_state: None,
-            selected_env: "".to_string(),
+            selected_env: Rc::new("".to_string()),
         }
     }
 
@@ -37,11 +37,24 @@ impl MainState {
         self.envs.is_some()
     }
 
-    pub fn set_active_env(&mut self, env: String) {
-        self.selected_env = env;
+    pub fn set_active_env(&mut self, env: &str) {
+        let found_value = self
+            .envs
+            .as_ref()
+            .unwrap()
+            .into_iter()
+            .find(|itm| itm.as_str() == env);
+
+        if let Some(found_value) = found_value {
+            self.selected_env = found_value.clone();
+            self.containers = None;
+            self.vms_state = None;
+            self.selected_vm = None;
+        }
     }
 
     pub fn set_environments(&mut self, envs: Vec<String>) {
+        let envs: Vec<Rc<String>> = envs.into_iter().map(Rc::new).collect();
         self.selected_env = envs[0].clone();
         self.envs = Some(envs);
     }

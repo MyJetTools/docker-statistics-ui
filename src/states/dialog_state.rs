@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 pub enum DialogType {
     /*
     ShowSecret(String),
@@ -10,7 +12,11 @@ pub enum DialogType {
     AddTemplateFromOtherTemplate { env: String, name: String },
     EditTemplate { env: String, name: String },
     DeleteTemplate { env: String, name: String }, */
-    ShowLogs { url: String, container_id: String },
+    ShowLogs {
+        env: Rc<String>,
+        url: String,
+        container_id: String,
+    },
     /*
     SecretUsage(String),
     SecretUsageBySecret(String),

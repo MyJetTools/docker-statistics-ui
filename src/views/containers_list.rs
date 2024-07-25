@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use dioxus::prelude::*;
 use super::icons::*;
 use crate::{
@@ -5,7 +7,8 @@ use crate::{
     views::{render_cpu_graph, render_mem_graph}, utils::format_mem,
 };
 
-pub fn containers_list() -> Element {
+#[component]
+pub fn containers_list(env: Rc<String>) -> Element {
     let mut main_state = consume_context::<Signal<MainState>>();
 
 
@@ -163,6 +166,7 @@ pub fn containers_list() -> Element {
                     };
 
                     let image_cloned = itm.container.image.clone();
+                    let env = env.clone();
                     rsx! {
                         tr { style: "border-top: 1px solid lightgray; color: {color}",
                             td {
@@ -177,6 +181,7 @@ pub fn containers_list() -> Element {
                                                 .show_dialog(
                                                     format!("Logs of container {}", image_cloned),
                                                     DialogType::ShowLogs {
+                                                        env: env.clone(),
                                                         container_id: id_cloned.clone(),
                                                         url: url_show_logs.clone(),
                                                     },

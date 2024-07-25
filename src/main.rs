@@ -99,6 +99,8 @@ fn ActiveApp() -> Element {
 
     let started_value = { *started.read() };
 
+    let env = { main_state.read().selected_env.clone() };
+
     if !started_value {
         started.set(true);
         read_loop(main_state);
@@ -107,9 +109,10 @@ fn ActiveApp() -> Element {
     rsx! {
 
         div { id: "layout",
-
             div { id: "left-panel", left_panel {} }
-            div { id: "right-panel", containers_list {} }
+            div { id: "right-panel",
+                containers_list { env }
+            }
             dialog::render_dialog {}
         }
     }

@@ -1,7 +1,7 @@
-use flurl::IntoFlUrl;
+use flurl::FlUrl;
 
-pub async fn get_logs(url: String, container_id: String, lines: u32) -> Result<String, String> {
-    let url_response = url
+pub async fn get_logs(flurl: FlUrl, container_id: String, lines: u32) -> Result<String, String> {
+    let url_response = flurl
         .append_path_segment("api")
         .append_path_segment("containers")
         .append_path_segment("logs")

@@ -7,14 +7,20 @@ use crate::{
 pub fn left_panel() -> Element {
     let env_name = use_signal(|| "".to_string());
 
-    let mut selected_vm_state = consume_context::<Signal<MainState>>();
+    let mut main_state = consume_context::<Signal<MainState>>();
 
-    let selected_vm_read_access = selected_vm_state.read();
+    let main_state_read_access = main_state.read();
 
-    let envs_options = if let Some(envs) = selected_vm_read_access.envs.as_ref() {
+    let envs_options = if let Some(envs) = main_state_read_access.envs.as_ref() {
         envs.clone().into_iter().map(|env| {
-            rsx! {
-                option { {env } }
+            if env.as_str() == main_state_read_access.selected_env.as_str() {
+                rsx! {
+                    option { selected: true, {env.as_str() } }
+                }
+            } else {
+                rsx! {
+                    option { {env.as_str() } }
+                }
             }
         })
     } else {
@@ -33,12 +39,11 @@ pub fn left_panel() -> Element {
         containers_amount: 0,
     };
 
-    let vms_state = selected_vm_read_access.vms_state.as_ref();
+    let vms_state = main_state_read_access.vms_state.as_ref();
 
     match vms_state {
         Some(vms) => {
             let items = vms.iter().map(|(vm, vm_model)| {
-
                 let vm = vm.to_string();
 
                 all_vms.cpu += vm_model.cpu;
@@ -46,7 +51,7 @@ pub fn left_panel() -> Element {
                 all_vms.containers_amount += vm_model.containers_amount;
                 all_vms.mem_limit += vm_model.mem_limit;
 
-                if selected_vm_read_access.is_single_vm_selected(&vm) {
+                if main_state_read_access.is_single_vm_selected(&vm) {
                     rsx! {
                         div { class: "menu-item menu-active",
                             render_vm_menu_item {
@@ -64,7 +69,7 @@ pub fn left_panel() -> Element {
                         div {
                             class: "menu-item",
                             onclick: move |_| {
-                                selected_vm_state.write().set_selected_vm(SelectedVm::SingleVm(vm.to_string()));
+                                main_state.write().set_selected_vm(SelectedVm::SingleVm(vm.to_string()));
                             },
                             render_vm_menu_item {
                                 name: vm.to_string(),
@@ -85,7 +90,7 @@ pub fn left_panel() -> Element {
                 hr {}
             });
 
-            let menu_active = if selected_vm_read_access.is_all_vms_selected() {
+            let menu_active = if main_state_read_access.is_all_vms_selected() {
                 "menu-active"
             } else {
                 ""
@@ -95,7 +100,7 @@ pub fn left_panel() -> Element {
                 div {
                     class: "menu-item {menu_active}",
                     onclick: move |_| {
-                        selected_vm_state.write().set_selected_vm(SelectedVm::All);
+                        main_state.write().set_selected_vm(SelectedVm::All);
                     },
                     render_vm_menu_item {
                         name: "All VMs".to_string(),
@@ -111,9 +116,10 @@ pub fn left_panel() -> Element {
             return rsx! {
                 select {
                     class: "form-select",
+
                     oninput: |ctx| {
                         let value = ctx.value();
-                        consume_context::<Signal<MainState>>().write().set_active_env(value);
+                        consume_context::<Signal<MainState>>().write().set_active_env(value.as_str());
                     },
                     {envs_options}
                 }

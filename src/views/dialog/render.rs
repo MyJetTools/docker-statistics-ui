@@ -18,9 +18,13 @@ pub fn render_dialog() -> Element {
         } => {
             let dialog_class = "modal-dialog";
             let dialog_content = match dialog_type {
-                DialogType::ShowLogs { url, container_id } => {
+                DialogType::ShowLogs {
+                    env,
+                    url,
+                    container_id,
+                } => {
                     rsx! {
-                        show_logs { url: url.clone(), container_id: container_id.clone() }
+                        show_logs { env: env.clone(), url: url.clone(), container_id: container_id.clone() }
                     }
                 } /*
                   DialogType::EditSecret(secret) => {

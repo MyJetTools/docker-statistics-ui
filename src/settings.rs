@@ -21,21 +21,27 @@ impl SettingsModel {
             let mut fl_urls = Vec::with_capacity(vms.len());
 
             for vm in vms {
-                let (ssh_credentials, url) = vm.get_url(self.ssh_credentials.as_ref()).await;
+                let fl_url = vm.get_fl_url(self.ssh_credentials.as_ref()).await;
 
-                let mut fl_url = FlUrl::new(url.as_str());
-
-                if let Some(ssh_credentials) = ssh_credentials {
-                    fl_url = fl_url.set_ssh_credentials(ssh_credentials);
-                }
-
-                fl_urls.push((url, fl_url));
+                fl_urls.push(fl_url);
             }
 
             result.insert(env_id.clone(), fl_urls);
         }
 
         result
+    }
+
+    pub async fn get_fl_url(&self, env: &str, url: &str) -> (String, FlUrl) {
+        let vms = self.envs.get(env).unwrap();
+
+        for vm in vms {
+            if vm.url.contains(url) {
+                return vm.get_fl_url(self.ssh_credentials.as_ref()).await;
+            }
+        }
+
+        panic!("Can not find vm with env {} and url '{}'", env, url);
     }
 }
 
@@ -56,6 +62,21 @@ impl VmSettingsModel {
         ssh_credentials: Option<&HashMap<String, SshCredentialsSettingsModel>>,
     ) -> (Option<SshCredentials>, String) {
         super::ssh_settings::parse_url(self.url.as_str(), ssh_credentials).await
+    }
+
+    pub async fn get_fl_url(
+        &self,
+        ssh_credentials: Option<&HashMap<String, SshCredentialsSettingsModel>>,
+    ) -> (String, FlUrl) {
+        let (ssh_credentials, url) = self.get_url(ssh_credentials).await;
+
+        let mut fl_url = FlUrl::new(url.as_str());
+
+        if let Some(ssh_credentials) = ssh_credentials {
+            fl_url = fl_url.set_ssh_credentials(ssh_credentials);
+        }
+
+        return (url, fl_url);
     }
 }
 

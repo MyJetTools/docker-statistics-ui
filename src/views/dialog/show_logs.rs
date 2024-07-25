@@ -21,7 +21,7 @@ impl LogsValue {
 }
 
 #[component]
-pub fn show_logs(url: String, container_id: String) -> Element {
+pub fn show_logs(env: String, url: String, container_id: String) -> Element {
     let logs = use_signal(|| LogsValue::new());
     let mut lines_amount = use_signal(|| 100u32);
 
@@ -32,11 +32,12 @@ pub fn show_logs(url: String, container_id: String) -> Element {
     if logs_read_access.is_empty() {
         let url = url.to_string();
         let id = container_id.to_string();
+        let env = env.to_string();
 
         let mut logs_spawned = logs.to_owned();
 
         spawn(async move {
-            let result = get_logs(url, id, lines_amount_value).await;
+            let result = get_logs(env, url, id, lines_amount_value).await;
 
             match result {
                 Ok(result) => {
@@ -74,9 +75,10 @@ pub fn show_logs(url: String, container_id: String) -> Element {
                     onclick: move |_| {
                         let url = url.to_string();
                         let id = container_id.to_string();
+                        let env = env.to_string();
                         let mut logs = logs.to_owned();
                         spawn(async move {
-                            let result = get_logs(url, id, lines_amount_value).await;
+                            let result = get_logs(env, url, id, lines_amount_value).await;
                             match result {
                                 Ok(result) => logs.write().set(result),
                                 Err(err) => {
@@ -131,8 +133,19 @@ fn load_logs<'s>(
  */
 
 #[server]
-async fn get_logs(url: String, id: String, lines_amount: u32) -> Result<String, ServerFnError> {
-    let result = crate::http_client::get_logs(url, id, lines_amount).await;
+async fn get_logs(
+    env: String,
+    url: String,
+    id: String,
+    lines_amount: u32,
+) -> Result<String, ServerFnError> {
+    let (_, fl_url) = crate::APP_CTX
+        .settings_reader
+        .get_settings()
+        .await
+        .get_fl_url(env.as_str(), url.as_str())
+        .await;
+    let result = crate::http_client::get_logs(fl_url, id, lines_amount).await;
     let result = match result {
         Ok(result) => result,
         Err(err) => format!("Error during receiving logs: {:?}", err),
