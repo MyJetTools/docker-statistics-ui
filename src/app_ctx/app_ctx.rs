@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flurl::FlUrlSshSessionsCache;
+use flurl::my_ssh::SshSessionsPool;
 use rust_extensions::AppStates;
 use tokio::sync::Mutex;
 
@@ -15,7 +15,7 @@ pub struct AppCtx {
     pub data_cache_by_env: Mutex<DataCacheByEnv>,
     pub app_states: Arc<AppStates>,
     pub settings_reader: SettingsReader,
-    pub fl_url_ssh_cache: Arc<FlUrlSshSessionsCache>,
+    pub ssh_sessions_pool: Arc<SshSessionsPool>,
 }
 
 impl AppCtx {
@@ -35,7 +35,7 @@ impl AppCtx {
             data_cache_by_env: Mutex::new(DataCacheByEnv::new()),
             app_states,
             settings_reader: SettingsReader::new(),
-            fl_url_ssh_cache: FlUrlSshSessionsCache::new().into(),
+            ssh_sessions_pool: SshSessionsPool::new().into(),
         }
     }
 }
