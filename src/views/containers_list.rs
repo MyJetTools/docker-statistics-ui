@@ -57,13 +57,35 @@ pub fn containers_list(env: Rc<String>) -> Element {
 
 
                         rsx!{
-                            "Created: {created}"
-                            div { style: "{color}", "Created: {duration.to_string()}" }
+                            div { style: "padding-top:0 !important; padding-bottom:0 !important; font-size:10px",
+                                "Created: {created}"
+                            }
+                            div { style: "{color}; font-size:10px", "Created: {duration.to_string()}" }
                         }
                         
                     }else{
                         None
                     };
+
+                    let state_to_render = if let Some(state) = itm.container.state.as_ref(){
+                        rsx!{
+                            div { style: "padding-top:0 !important; padding-bottom:0 !important; font-size:10px",
+                                "State: {state}"
+                            }
+                        }
+                        }else{
+                            None
+                        };
+
+                        let status_to_render = if let Some(status) = itm.container.status.as_ref(){
+                            rsx!{
+                                div { style: "padding-top:0 !important; padding-bottom:0 !important; font-size:10px",
+                                    "Status: {status}"
+                                }
+                            }
+                            }else{
+                                None
+                            };
 
 
                     let mut ports_to_render = Vec::new();
@@ -191,7 +213,11 @@ pub fn containers_list(env: Rc<String>) -> Element {
                             td {
                                 div { "{itm.container.image}" }
                                 div { {vm_name} }
-                                div { {created_to_render} }
+                                div { style: "padding-top:0 !important; padding-bottom:0 !important",
+                                    {created_to_render}
+                                }
+                                {state_to_render},
+                                {status_to_render},
                                 div {
                                     button {
                                         class: "btn btn-sm btn-primary",
