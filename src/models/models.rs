@@ -2,15 +2,6 @@ use std::collections::BTreeMap;
 
 use serde::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VmModel {
-    pub api_url: String,
-    pub cpu: f64,
-    pub mem: i64,
-    pub mem_limit: i64,
-    pub containers_amount: usize,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PortHttpModel {
     pub ip: Option<String>,
@@ -29,6 +20,7 @@ pub struct ContainerModel {
     pub names: Vec<String>,
     pub labels: Option<BTreeMap<String, String>>,
     pub enabled: bool,
+    pub created: Option<i64>,
     pub cpu: CpuUsageJsonMode,
     pub mem: MemUsageJsonMode,
     pub cpu_usage_history: Option<Vec<f64>>,
@@ -91,6 +83,7 @@ pub struct ContainerJsonModel {
     pub names: Vec<String>,
     pub labels: Option<BTreeMap<String, String>>,
     pub enabled: bool,
+    pub created: Option<i64>,
     pub cpu: CpuUsageJsonMode,
     pub mem: MemUsageJsonMode,
     pub ports: Option<Vec<PortHttpModel>>,

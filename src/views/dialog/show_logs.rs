@@ -139,13 +139,13 @@ async fn get_logs(
     id: String,
     lines_amount: u32,
 ) -> Result<String, ServerFnError> {
-    let (_, fl_url) = crate::APP_CTX
+    let (_, fl_url) = crate::server::APP_CTX
         .settings_reader
         .get_settings()
         .await
         .get_fl_url(env.as_str(), url.as_str())
         .await;
-    let result = crate::http_client::get_logs(fl_url, id, lines_amount).await;
+    let result = crate::server::http_client::get_logs(fl_url, id, lines_amount).await;
     let result = match result {
         Ok(result) => result,
         Err(err) => format!("Error during receiving logs: {:?}", err),

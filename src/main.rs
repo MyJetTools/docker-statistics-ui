@@ -3,42 +3,24 @@
 use std::collections::BTreeMap;
 
 #[cfg(feature = "server")]
-use app_ctx::AppCtx;
+mod server;
+
+mod models;
 
 use dioxus::prelude::*;
-use models::{MetricsByVm, VmModel};
+use models::*;
 
 mod selected_vm;
 mod utils;
 
-#[cfg(feature = "server")]
-mod app_ctx;
-#[cfg(feature = "server")]
-mod background;
-#[cfg(feature = "server")]
-mod settings;
-#[cfg(feature = "server")]
-mod ssh_settings;
 mod states;
 
-mod models;
 mod views;
 
 use serde::*;
 use views::*;
-#[cfg(feature = "server")]
-mod http_client;
-#[cfg(feature = "server")]
-mod ssh_certs_cache;
 
 use crate::states::*;
-
-#[cfg(feature = "server")]
-lazy_static::lazy_static! {
-    pub static ref APP_CTX: AppCtx = {
-        AppCtx::new()
-    };
-}
 
 pub const METRICS_HISTORY_SIZE: usize = 150;
 
@@ -167,7 +149,7 @@ pub struct RequestApiModel {
 
 #[server]
 async fn get_envs() -> Result<Vec<String>, ServerFnError> {
-    let settings = crate::APP_CTX.settings_reader.get_settings().await;
+    let settings = crate::server::APP_CTX.settings_reader.get_settings().await;
     Ok(settings.envs.keys().cloned().collect())
 }
 
@@ -176,7 +158,7 @@ async fn get_vm_cpu_and_mem(
     env: String,
     selected_vm: String,
 ) -> Result<RequestApiModel, ServerFnError> {
-    let cache_access_by_env = crate::APP_CTX.data_cache_by_env.lock().await;
+    let cache_access_by_env = crate::server::APP_CTX.data_cache_by_env.lock().await;
 
     let cache_access = cache_access_by_env.envs.get(&env);
 

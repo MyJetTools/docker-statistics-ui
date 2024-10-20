@@ -78,7 +78,7 @@ impl VmSettingsModel {
         if let Some(ssh_credentials) = ssh_credentials {
             fl_url = fl_url
                 .set_ssh_credentials(Arc::new(ssh_credentials))
-                .set_ssh_sessions_pool(crate::APP_CTX.ssh_sessions_pool.clone());
+                .set_ssh_sessions_pool(crate::server::APP_CTX.ssh_sessions_pool.clone());
         }
 
         return (url, fl_url);

@@ -9,7 +9,7 @@ edition = "2021"
 default = []
 server = [
     "dioxus/axum",
-    "rust-extensions",
+    "rust-extensions/with-tokio",
     "my-logger",
     "async-trait",
     "futures",
@@ -23,9 +23,7 @@ server = [
 web = ["dioxus/web"]
 
 [dependencies]
-rust-extensions = { tag = "0.1.4", git = "https://github.com/MyJetTools/rust-extensions.git", features = [
-    "with-tokio",
-], optional = true }
+rust-extensions = { tag = "0.1.4", git = "https://github.com/MyJetTools/rust-extensions.git" }
 my-logger = { tag = "1.1.0", git = "https://github.com/MyJetTools/my-logger.git", optional = true }
 
 dioxus = { version = "0.5", features = ["fullstack", "router"] }
@@ -36,6 +34,10 @@ chrono = "*"
 dioxus-free-icons = { path = "./libs/icon-packages/lib", features = [
     "bootstrap",
     "ionicons",
+] }
+
+dioxus-utils = { tag = "0.1.0", git = "https://github.com/MyJetTools/dioxus-utils.git", features = [
+    "fullstack",
 ] }
 
 tokio = { version = "*", features = ["time", "rt"] }

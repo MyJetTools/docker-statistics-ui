@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use flurl::my_ssh::SshCredentials;
 
-use crate::{settings::SshCredentialsSettingsModel, ssh_certs_cache::SshCacheCerts};
+use super::{settings::SshCredentialsSettingsModel, ssh_certs_cache::SshCacheCerts};
 
 lazy_static::lazy_static! {
     pub static ref SSH_CERTS_CACHE: SshCacheCerts = {

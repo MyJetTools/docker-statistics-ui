@@ -4,16 +4,16 @@ use flurl::my_ssh::SshSessionsPool;
 use rust_extensions::AppStates;
 use tokio::sync::Mutex;
 
-use crate::settings::SettingsReader;
+use crate::server::settings::SettingsReader;
 
 use super::DataCacheByEnv;
 
-use crate::background::UpdateMetricsCacheTimer;
+use crate::server::background::UpdateMetricsCacheTimer;
 use rust_extensions::MyTimer;
 
 pub struct AppCtx {
     pub data_cache_by_env: Mutex<DataCacheByEnv>,
-    pub app_states: Arc<AppStates>,
+    pub _app_states: Arc<AppStates>,
     pub settings_reader: SettingsReader,
     pub ssh_sessions_pool: Arc<SshSessionsPool>,
 }
@@ -33,7 +33,7 @@ impl AppCtx {
 
         Self {
             data_cache_by_env: Mutex::new(DataCacheByEnv::new()),
-            app_states,
+            _app_states: app_states,
             settings_reader: SettingsReader::new(),
             ssh_sessions_pool: SshSessionsPool::new().into(),
         }

@@ -1,6 +1,6 @@
 use rust_extensions::MyTimerTick;
 
-use crate::APP_CTX;
+use crate::server::APP_CTX;
 
 pub struct UpdateMetricsCacheTimer;
 
@@ -15,7 +15,7 @@ impl MyTimerTick for UpdateMetricsCacheTimer {
         for (env, urls) in settings.get_fl_urls().await {
             let task = tokio::spawn(async move {
                 for (url, fl_url) in urls {
-                    let statistics = crate::http_client::get_statistics(fl_url).await;
+                    let statistics = crate::server::http_client::get_statistics(fl_url).await;
 
                     if let Err(err) = &statistics {
                         println!(

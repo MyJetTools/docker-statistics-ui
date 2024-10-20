@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use dioxus::prelude::*;
+use rust_extensions::date_time::DateTimeAsMicroseconds;
 use super::icons::*;
 use crate::{
     states::{MainState, DialogState, DialogType},
@@ -21,16 +22,7 @@ pub fn containers_list(env: Rc<String>) -> Element {
     let show_disabled_state_value = *show_disabled_state.read();
 
 
-    /*
-    let loop_is_run = use_state(cx, || false);
-
-
-    if !loop_is_run.get() && main_state.read().get_selected_vm().is_some(){
-        loop_is_run.set(true);
-        load_containers(&cx, &main_state);
-    }
- */
-
+    let now = dioxus_utils::js::now_date_time();
 
     let main_state_read_access = main_state.read();
     match main_state_read_access.get_containers() {
@@ -45,6 +37,33 @@ pub fn containers_list(env: Rc<String>) -> Element {
                 })
                 .map(|itm| {
                     let color = if itm.container.enabled { "black" } else { "lightgray" };
+
+
+                    let created_to_render = if let Some(created) = itm.container.created{
+
+
+                        let created = DateTimeAsMicroseconds::from(created);
+                        let duration = now.duration_since(created);
+                        let created = created.to_rfc3339();
+               
+
+                        let created = &created[0..19];
+
+                        let color = if duration.get_full_days()>=1{
+                            "color:green"
+                        }else{
+                            "color:red"
+                        };
+
+
+                        rsx!{
+                            "Started: {created}"
+                            div { style: "{color}", "Uptime: {duration.to_string()}" }
+                        }
+                        
+                    }else{
+                        None
+                    };
 
 
                     let mut ports_to_render = Vec::new();
@@ -172,6 +191,7 @@ pub fn containers_list(env: Rc<String>) -> Element {
                             td {
                                 div { "{itm.container.image}" }
                                 div { {vm_name} }
+                                div { {created_to_render} }
                                 div {
                                     button {
                                         class: "btn btn-sm btn-primary",
@@ -274,57 +294,3 @@ pub fn containers_list(env: Rc<String>) -> Element {
     }
 }
 
-/*
-fn load_containers(cx: &Scope, main_state: &UseSharedState<MainState>) {
-
-
-    let main_state = main_state.to_owned();
-
-
-
-
-    cx.spawn(async move {
-      let mut no = 0;
-      let mut loop_state_no = main_state.read().state_no;
-      loop {
-            let selected_vm = main_state.read().get_selected_vm().unwrap();
-
-            if loop_state_no != main_state.read().state_no {
-                no = 0;
-                loop_state_no = main_state.read().state_no;
-            }
-
-            if let Ok(items) = get_metrics_by_vm(selected_vm.to_string(), no>0).await{
-    
-                if main_state.read().state_no == loop_state_no {
-                    main_state.write().set_containers(items);
-                }
-            }
-
-            no += 1;
-
-           // tokio::time::sleep(delay).await;
-       }
-    });
-}
-
-
-#[server]
-async fn get_metrics_by_vm(selected_vm: String, background:bool) -> Result<Vec<MetricsByVm>, ServerFnError>{
-    if background{
-        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-    }
-    
-    let selected_vm = crate::selected_vm::SelectedVm::from_string(selected_vm);
-    let mut result = crate::APP_CTX.metrics_cache.get_metrics_by_vm(&selected_vm).await;
-
-    let access = crate::APP_CTX.metrics_history.lock().await;
-    for result in result.iter_mut(){
-        if let Some(wrapper) = access.get(&result.container.id){
-            result.container.cpu_usage_history = Some(wrapper.cpu.get_snapshot());
-            result.container.mem_usage_history = Some(wrapper.mem.get_snapshot());
-        }
-    }
-
-    Ok(result)
-} */

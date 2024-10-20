@@ -34,6 +34,7 @@ impl Into<ContainerModel> for ContainerJsonModel {
             names: self.names,
             labels: self.labels,
             enabled: self.enabled,
+            created: self.created,
             cpu: self.cpu,
             mem: self.mem,
             cpu_usage_history: None,
