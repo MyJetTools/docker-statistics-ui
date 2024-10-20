@@ -57,8 +57,8 @@ pub fn containers_list(env: Rc<String>) -> Element {
 
 
                         rsx!{
-                            "Started: {created}"
-                            div { style: "{color}", "Uptime: {duration.to_string()}" }
+                            "Created: {created}"
+                            div { style: "{color}", "Created: {duration.to_string()}" }
                         }
                         
                     }else{
