@@ -8,3 +8,5 @@ pub use render_mem_graph::*;
 mod render_cpu_graph;
 pub use render_cpu_graph::*;
 pub mod dialog;
+mod prompt_ssh_pass_key;
+pub use prompt_ssh_pass_key::*;

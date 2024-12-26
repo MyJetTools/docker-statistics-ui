@@ -11,7 +11,7 @@ pub fn render_dialog() -> Element {
     let dialog = dialog.read();
 
     let dialog = match dialog.as_ref() {
-        DialogState::Hidden => None,
+        DialogState::Hidden => rsx! {},
         DialogState::Shown {
             header,
             dialog_type,
@@ -24,7 +24,11 @@ pub fn render_dialog() -> Element {
                     container_id,
                 } => {
                     rsx! {
-                        show_logs { env: env.clone(), url: url.clone(), container_id: container_id.clone() }
+                        show_logs {
+                            env: env.clone(),
+                            url: url.clone(),
+                            container_id: container_id.clone(),
+                        }
                     }
                 } /*
                   DialogType::EditSecret(secret) => {

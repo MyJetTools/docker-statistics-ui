@@ -1,4 +1,6 @@
-use std::{collections::BTreeMap, rc::Rc};
+use std::collections::BTreeMap;
+
+use dioxus_shared::states::EnvListState;
 
 use crate::{
     models::{MetricsByVm, VmModel},
@@ -6,8 +8,7 @@ use crate::{
 };
 
 pub struct MainState {
-    pub selected_env: Rc<String>,
-    pub envs: Option<Vec<Rc<String>>>,
+    pub envs: EnvListState,
     pub vms_state: Option<BTreeMap<String, VmModel>>,
     pub state_no: usize,
     pub data_request_no: i32,
@@ -16,47 +17,22 @@ pub struct MainState {
     filter: String,
 
     pub dialog_is_shown: bool,
+    pub prompt_pass_key: bool,
 }
 
 impl MainState {
     pub fn new() -> Self {
         Self {
             selected_vm: None,
-            envs: None,
             containers: None,
             filter: "".to_string(),
             state_no: 0,
             dialog_is_shown: false,
             data_request_no: 0,
             vms_state: None,
-            selected_env: Rc::new("".to_string()),
+            prompt_pass_key: false,
+            envs: EnvListState::new(),
         }
-    }
-
-    pub fn has_envs(&self) -> bool {
-        self.envs.is_some()
-    }
-
-    pub fn set_active_env(&mut self, env: &str) {
-        let found_value = self
-            .envs
-            .as_ref()
-            .unwrap()
-            .into_iter()
-            .find(|itm| itm.as_str() == env);
-
-        if let Some(found_value) = found_value {
-            self.selected_env = found_value.clone();
-            self.containers = None;
-            self.vms_state = None;
-            self.selected_vm = None;
-        }
-    }
-
-    pub fn set_environments(&mut self, envs: Vec<String>) {
-        let envs: Vec<Rc<String>> = envs.into_iter().map(Rc::new).collect();
-        self.selected_env = envs[0].clone();
-        self.envs = Some(envs);
     }
 
     pub fn set_selected_vm(&mut self, selected_vm: SelectedVm) {
@@ -84,7 +60,8 @@ impl MainState {
     }
 
     pub fn get_selected_vm(&self) -> (String, Option<SelectedVm>) {
-        (self.selected_env.to_string(), self.selected_vm.clone())
+        let selected_env = self.envs.get_selected_env().as_ref().unwrap().to_string();
+        (selected_env, self.selected_vm.clone())
     }
 
     pub fn get_containers(&self) -> Option<Vec<&MetricsByVm>> {

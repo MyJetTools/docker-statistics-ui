@@ -11,15 +11,18 @@ pub fn left_panel() -> Element {
 
     let main_state_read_access = main_state.read();
 
-    let envs_options = if let Some(envs) = main_state_read_access.envs.as_ref() {
+    let selected_env = main_state_read_access.envs.get_selected_env().unwrap();
+
+    let envs_options = if let Some(envs) = main_state_read_access.envs.items.try_unwrap_as_loaded()
+    {
         envs.clone().into_iter().map(|env| {
-            if env.as_str() == main_state_read_access.selected_env.as_str() {
+            if env.as_str() == selected_env.as_str() {
                 rsx! {
-                    option { selected: true, {env.as_str() } }
+                    option { selected: true, {env.as_str()} }
                 }
             } else {
                 rsx! {
-                    option { {env.as_str() } }
+                    option { {env.as_str()} }
                 }
             }
         })
@@ -60,7 +63,7 @@ pub fn left_panel() -> Element {
                                 mem: vm_model.mem,
                                 mem_limit: vm_model.mem_limit,
                                 amount: vm_model.containers_amount,
-                                url: vm_model.api_url.to_string()
+                                url: vm_model.api_url.to_string(),
                             }
                         }
                     }
@@ -77,7 +80,7 @@ pub fn left_panel() -> Element {
                                 mem: vm_model.mem,
                                 mem_limit: vm_model.mem_limit,
                                 amount: vm_model.containers_amount,
-                                url: vm_model.api_url.to_string()
+                                url: vm_model.api_url.to_string(),
                             }
                         }
                     }
@@ -108,7 +111,7 @@ pub fn left_panel() -> Element {
                         mem: all_vms.mem,
                         mem_limit: all_vms.mem_limit,
                         amount: all_vms.containers_amount,
-                        url: all_vms.api_url.to_string()
+                        url: all_vms.api_url.to_string(),
                     }
                 }
             });
@@ -119,7 +122,10 @@ pub fn left_panel() -> Element {
 
                     oninput: |ctx| {
                         let value = ctx.value();
-                        consume_context::<Signal<MainState>>().write().set_active_env(value.as_str());
+                        consume_context::<Signal<MainState>>()
+                            .write()
+                            .envs
+                            .set_active_env(value.as_str());
                     },
                     {envs_options}
                 }

@@ -1,23 +1,31 @@
 use dioxus::prelude::*;
-use dioxus_free_icons::icons::bs_icons::*;
-use dioxus_free_icons::*;
 
 pub fn search_icon() -> Element {
-    Icon(BsSearch, 16, 16, "gray")
+    rsx! {
+        img { src: "/assets/img/ico-search.svg" }
+    }
 }
 
 pub fn server_icon() -> Element {
-    Icon(BsPc, 32, 32, "")
+    rsx! {
+        img { src: "/assets/img/ico-server.svg" }
+    }
 }
 
 pub fn server_icon_16() -> Element {
-    Icon(BsPc, 16, 16, "")
+    rsx! {
+        img { src: "/assets/img/ico-server-16.svg" }
+    }
 }
 
 pub fn memory_icon() -> Element {
-    Icon(BsMemory, 16, 16, "")
+    rsx! {
+        img { src: "/assets/img/ico-memory.svg" }
+    }
 }
 
 pub fn cpu_icon() -> Element {
-    Icon(BsCpu, 16, 16, "")
+    rsx! {
+        img { src: "/assets/img/ico-cpu.svg" }
+    }
 }

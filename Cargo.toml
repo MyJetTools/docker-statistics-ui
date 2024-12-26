@@ -8,7 +8,7 @@ edition = "2021"
 [features]
 default = []
 server = [
-    "dioxus/axum",
+    "dioxus/server",
     "rust-extensions",
     "my-logger",
     "async-trait",
@@ -18,25 +18,28 @@ server = [
     "serde_yaml",
     "flurl",
     "tokio/full",
+    "my-settings-reader",
+    "my-ssh",
 
 ]
 web = ["dioxus/web"]
 
 [dependencies]
-rust-extensions = { tag = "0.1.4", git = "https://github.com/MyJetTools/rust-extensions.git", features = [
+rust-extensions = { tag = "0.1.5", git = "https://github.com/MyJetTools/rust-extensions.git", features = [
     "with-tokio",
 ], optional = true }
-my-logger = { tag = "1.1.0", git = "https://github.com/MyJetTools/my-logger.git", optional = true }
+my-logger = { tag = "1.2.1", git = "https://github.com/MyJetTools/my-logger.git", optional = true }
 
-dioxus = { version = "0.5", features = ["fullstack", "router"] }
+dioxus = { version = "0.6", features = ["fullstack", "router"] }
+
+dioxus-utils = { tag = "0.6.0", git = "https://github.com/MyJetTools/dioxus-utils.git", features = [
+    "fullstack",
+] }
+
+dioxus-shared = { tag = "0.6.0", git = "https://github.com/MyJetTools/dioxus-shared.git" }
+
 serde = "*"
 chrono = "*"
-
-
-dioxus-free-icons = { path = "./libs/icon-packages/lib", features = [
-    "bootstrap",
-    "ionicons",
-] }
 
 tokio = { version = "*", features = ["time", "rt"] }
 serde_json = { version = "*", optional = true }
@@ -45,6 +48,22 @@ futures = { version = "*", optional = true }
 async-trait = { version = "*", optional = true }
 lazy_static = { version = "*", optional = true }
 base64 = { version = "*" }
-flurl = { tag = "0.5.2", git = "https://github.com/MyJetTools/fl-url.git", features = [
+flurl = { tag = "0.6.1", git = "https://github.com/MyJetTools/fl-url.git", features = [
     "with-ssh",
 ], optional = true }
+
+my-settings-reader = { tag = "0.4.1", git = "https://github.com/MyJetTools/my-settings-reader.git", optional = true }
+
+my-ssh = { tag = "0.1.2", git = "https://github.com/MyJetTools/my-ssh.git", optional = true }
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
