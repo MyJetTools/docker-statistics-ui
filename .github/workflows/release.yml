@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     container:
-      image: myjettools/dioxus-docker:0.1.1
+      image: myjettools/dioxus-docker:0.1.2
     steps:
       - uses: actions/checkout@v2
 
@@ -22,7 +22,9 @@ jobs:
           echo $ver
           sed -i -e 's/^version = .*/version = "'$ver'"/' Cargo.toml
 
-      - run: dx build --platform fullstack --release
+      - run: |
+          dx build --platform fullstack --release
+          python3 build.py ./dist/index.html
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v3

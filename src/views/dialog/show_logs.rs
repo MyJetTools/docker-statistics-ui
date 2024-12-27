@@ -162,9 +162,8 @@ async fn get_logs(
     let fl_url = crate::server::APP_CTX
         .get_fl_url(env.as_str(), url.as_str())
         .await;
-
     let result = crate::server::http_client::get_logs(fl_url, id, lines_amount).await;
-    let mut payload = match result {
+    let payload = match result {
         Ok(result) => result,
         Err(err) => return Err(ServerFnError::new(err)),
     };
@@ -186,12 +185,19 @@ async fn get_logs(
 
         let tp = tp.unwrap();
 
-        let n = payload.next().unwrap();
+        let n = payload.next().unwrap_or(255);
         if n != 0 {
             break;
         }
-        payload.next();
-        payload.next();
+        let n = payload.next().unwrap_or(255);
+        if n != 0 {
+            break;
+        }
+
+        payload.next().unwrap_or(255);
+        if n != 0 {
+            break;
+        }
 
         let mut size = [0u8; 4];
 

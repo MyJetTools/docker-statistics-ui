@@ -16,6 +16,7 @@ impl MyTimerTick for UpdateMetricsCacheTimer {
             let task = tokio::spawn(async move {
                 for api_url in urls {
                     let fl_url = crate::server::APP_CTX.create_fl_url(&api_url);
+
                     let statistics = crate::server::http_client::get_statistics(fl_url).await;
 
                     if let Err(err) = &statistics {

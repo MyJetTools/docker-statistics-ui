@@ -162,6 +162,8 @@ fn render_vm_menu_item(
                     div {
                         cpu_icon {}
                         span { font: "courier", style: "font-size:10px", ":{cpu:.3}  " }
+                    }
+                    div {
                         memory_icon {}
                         span { style: "font-size:10px", ":{mem}/{mem_limit}" }
                     }

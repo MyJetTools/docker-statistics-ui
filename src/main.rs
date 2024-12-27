@@ -7,14 +7,16 @@ mod server;
 
 use dioxus::prelude::*;
 use dioxus_utils::DataState;
-use models::{MetricsByVm, VmModel};
+
+mod models;
+
+use models::*;
 
 mod selected_vm;
 mod utils;
 
 mod states;
 
-mod models;
 mod views;
 
 use serde::*;
