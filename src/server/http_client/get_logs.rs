@@ -1,6 +1,6 @@
 use flurl::FlUrl;
 
-pub async fn get_logs(fl_url: FlUrl, container_id: String, lines: u32) -> Result<String, String> {
+pub async fn get_logs(fl_url: FlUrl, container_id: String, lines: u32) -> Result<Vec<u8>, String> {
     let url_response = fl_url
         .append_path_segment("api")
         .append_path_segment("containers")
@@ -20,7 +20,5 @@ pub async fn get_logs(fl_url: FlUrl, container_id: String, lines: u32) -> Result
         return Err(format!("Error: {:?}", err));
     };
 
-    let result = String::from_utf8(result.unwrap()).unwrap();
-
-    Ok(result)
+    Ok(result.unwrap())
 }

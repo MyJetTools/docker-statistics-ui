@@ -93,8 +93,6 @@ fn ActiveApp() -> Element {
     let main_state = consume_context::<Signal<MainState>>();
     let mut started = use_signal(|| false);
 
-    let started_value = { *started.read() };
-
     let env = { main_state.read().envs.get_selected_env() };
 
     if env.is_none() {
@@ -103,10 +101,10 @@ fn ActiveApp() -> Element {
 
     let env = env.unwrap();
 
-    if !started_value {
+    use_effect(move || {
         started.set(true);
         read_loop(main_state);
-    }
+    });
 
     rsx! {
 

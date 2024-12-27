@@ -1,62 +1,51 @@
 use dioxus::prelude::*;
-
-pub struct LogsValue(String);
-
-impl LogsValue {
-    pub fn new() -> Self {
-        LogsValue("".to_string())
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    pub fn set(&mut self, value: String) {
-        self.0 = value;
-    }
-
-    pub fn as_str(&self) -> &str {
-        self.0.as_str()
-    }
-}
+use dioxus_utils::DataState;
+use serde::{Deserialize, Serialize};
 
 #[component]
 pub fn show_logs(env: String, url: String, container_id: String) -> Element {
-    let logs = use_signal(|| LogsValue::new());
-    let mut lines_amount = use_signal(|| 100u32);
+    let mut dialog_state = use_signal(|| DialogState::new());
+    let dialog_state_read_access = dialog_state.read();
 
-    let logs_read_access = logs.read();
+    let items = match dialog_state_read_access.data.as_ref() {
+        DataState::None => {
+            let lines_amount_value = dialog_state_read_access.get_lines_amount();
+            spawn(async move {
+                dialog_state.write().data.set_loading();
+                let result = get_logs(env, url, container_id, lines_amount_value).await;
 
-    let lines_amount_value = *lines_amount.read();
-
-    if logs_read_access.is_empty() {
-        let url = url.to_string();
-        let id = container_id.to_string();
-        let env = env.to_string();
-
-        let mut logs_spawned = logs.to_owned();
-
-        spawn(async move {
-            let result = get_logs(env, url, id, lines_amount_value).await;
-
-            match result {
-                Ok(result) => {
-                    logs_spawned.write().set(result);
+                match result {
+                    Ok(result) => {
+                        dialog_state.write().data.set_loaded(result);
+                    }
+                    Err(err) => {
+                        dialog_state.write().data.set_error(err.to_string());
+                    }
                 }
-                Err(err) => logs_spawned
-                    .write()
-                    .set(format!("Error during receiving logs: {:?}", err)),
-            }
-        });
+            });
 
-        return rsx! {
-            div { class: "modal-content",
-                div { class: "form-control modal-content-full-screen", "Loading..." }
-            }
-        };
-    }
+            return rsx! {
+                {"Loading logs..."}
+            };
+        }
+        DataState::Loading => {
+            return rsx! {
+                {"Loading logs..."}
+            };
+        }
+        DataState::Loaded(items) => items,
+        DataState::Error(err) => {
+            let msg = format!("Error during receiving logs: {:?}", err);
+            return rsx! {
+                div { style: "color:red", {msg} }
+            };
+        }
+    };
 
-    let amount_value = lines_amount.to_string();
+    //    let mut lines_amount = use_signal(|| 100u32);
+    //    let lines_amount_value = *lines_amount.read();
+
+    let amount_value = dialog_state_read_access.lines_amount.to_string();
 
     rsx! {
         div { class: "modal-content",
@@ -67,37 +56,62 @@ pub fn show_logs(env: String, url: String, container_id: String) -> Element {
                     value: "{amount_value}",
                     r#type: "number",
                     onchange: move |cx| {
-                        lines_amount.set(cx.value().parse().unwrap_or(100));
+                        dialog_state.write().lines_amount = cx.value();
                     },
                 }
                 button {
                     class: "btn btn-outline-secondary",
                     onclick: move |_| {
-                        let url = url.to_string();
-                        let id = container_id.to_string();
-                        let env = env.to_string();
-                        let mut logs = logs.to_owned();
-                        spawn(async move {
-                            let result = get_logs(env, url, id, lines_amount_value).await;
-                            match result {
-                                Ok(result) => logs.write().set(result),
-                                Err(err) => {
-                                    logs.write().set(format!("Error during receiving logs: {:?}", err))
-                                }
-                            }
-                        });
+                        dialog_state.write().data.set_none();
                     },
                     "Request"
                 }
             }
 
-            textarea {
+            div {
                 style: "height:80vh; font-size: 14px; margin-top:10px",
                 class: "form-control modal-content-full-screen",
-                readonly: true,
-                {logs_read_access.as_str()}
+                {render_logs_content(items)}
             }
         }
+    }
+}
+
+fn render_logs_content(content: &[LogLineHttpModel]) -> Element {
+    let mut items_to_render = Vec::new();
+
+    for line in content {
+        let cl = match line.tp {
+            0 => "orange",
+            1 => "black",
+            2 => "red",
+            _ => "gray",
+        };
+        items_to_render.push(rsx! {
+            div { style: "color: {cl}", {line.line.as_str()} }
+        });
+    }
+
+    rsx! {
+        {items_to_render.into_iter()}
+    }
+}
+
+pub struct DialogState {
+    data: DataState<Vec<LogLineHttpModel>>,
+    lines_amount: String,
+}
+
+impl DialogState {
+    pub fn new() -> Self {
+        Self {
+            data: DataState::None,
+            lines_amount: "100".to_string(),
+        }
+    }
+
+    pub fn get_lines_amount(&self) -> u32 {
+        self.lines_amount.parse().unwrap_or(100)
     }
 }
 
@@ -132,25 +146,76 @@ fn load_logs<'s>(
 }
  */
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LogLineHttpModel {
+    pub tp: u8,
+    pub line: String,
+}
+
 #[server]
 async fn get_logs(
     env: String,
     url: String,
     id: String,
     lines_amount: u32,
-) -> Result<String, ServerFnError> {
+) -> Result<Vec<LogLineHttpModel>, ServerFnError> {
     let fl_url = crate::server::APP_CTX
         .get_fl_url(env.as_str(), url.as_str())
         .await;
 
     let result = crate::server::http_client::get_logs(fl_url, id, lines_amount).await;
-    let result = match result {
+    let mut payload = match result {
         Ok(result) => result,
-        Err(err) => format!("Error during receiving logs: {:?}", err),
+        Err(err) => return Err(ServerFnError::new(err)),
     };
 
-    if result.len() == 0 {
-        return Ok("No Logs Received".to_string());
+    if payload.len() == 0 {
+        return Ok(vec![]);
+    }
+    let mut result = Vec::new();
+
+    println!("Payload.len = {}", payload.len());
+
+    let mut payload = payload.into_iter();
+    loop {
+        let tp = payload.next();
+
+        if tp.is_none() {
+            break;
+        }
+
+        let tp = tp.unwrap();
+
+        let n = payload.next().unwrap();
+        if n != 0 {
+            break;
+        }
+        payload.next();
+        payload.next();
+
+        let mut size = [0u8; 4];
+
+        size[0] = payload.next().unwrap();
+        size[1] = payload.next().unwrap();
+        size[2] = payload.next().unwrap();
+        size[3] = payload.next().unwrap();
+
+        let size = u32::from_be_bytes(size) as usize;
+
+        let mut str = Vec::with_capacity(size);
+
+        for _ in 0..size - 1 {
+            str.push(payload.next().unwrap());
+        }
+
+        payload.next().unwrap();
+
+        let item = LogLineHttpModel {
+            tp,
+            line: String::from_utf8(str).unwrap(),
+        };
+
+        result.push(item);
     }
 
     Ok(result)
