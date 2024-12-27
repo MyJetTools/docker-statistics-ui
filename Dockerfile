@@ -1,7 +1,11 @@
 FROM ubuntu:22.04
 
-COPY ./target/release/docker-statistics-ui ./target/release/docker-statistics-ui
-COPY ./dist ./dist
-RUN chmod +x ./target/release/docker-statistics-ui
+ENV PORT=9001
+ENV IP=0.0.0.0
 
-ENTRYPOINT ["./target/release/docker-statistics-ui"]
+EXPOSE 9001
+
+COPY ./target/dx/docker-statistics-ui /release/web /target/dx/docker-statistics-ui /release/web
+RUN chmod +x /target/dx/docker-statistics-ui /release/web/server
+WORKDIR /target/dx/docker-statistics-ui /release/web/
+ENTRYPOINT ["./server" ]
