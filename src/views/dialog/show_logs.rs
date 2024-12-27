@@ -88,7 +88,7 @@ fn render_logs_content(content: &[LogLineHttpModel]) -> Element {
             _ => "gray",
         };
         items_to_render.push(rsx! {
-            div { style: "color: {cl}", {line.line.as_str()} }
+            div { style: "color: {cl}", "{line.line.as_str()}" }
         });
     }
 

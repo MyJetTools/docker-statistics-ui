@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["server"]
+default = []
 server = [
     "dioxus/server",
     "rust-extensions/with-tokio",
@@ -43,10 +43,7 @@ dioxus-utils = { tag = "0.6.0", git = "https://github.com/MyJetTools/dioxus-util
 ] }
 dioxus-shared = { tag = "0.6.0", git = "https://github.com/MyJetTools/dioxus-shared.git" }
 chrono = "*"
-dioxus-free-icons = { path = "./libs/icon-packages/lib", features = [
-    "bootstrap",
-    "ionicons",
-] }
+
 serde_json = { version = "*", optional = true }
 serde_yaml = { version = "*", optional = true }
 futures = { version = "*", optional = true }
