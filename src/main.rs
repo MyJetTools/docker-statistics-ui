@@ -164,7 +164,18 @@ pub struct EnvsHttpModel {
 #[server]
 async fn get_envs() -> Result<EnvsHttpModel, ServerFnError> {
     let settings = crate::server::APP_CTX.settings_reader.get_settings().await;
-    let envs = settings.envs.keys().cloned().collect();
+
+    let envs = {
+        let server_context = server_context();
+        let req = server_context.request_parts();
+
+        let user_id = if let Some(user) = req.headers.get("x-ssl-user") {
+            user.to_str().unwrap()
+        } else {
+            ""
+        };
+        settings.get_envs(user_id)
+    };
 
     let mut request_pass_key = false;
 

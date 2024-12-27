@@ -105,21 +105,23 @@ impl DataCache {
         }
     }
 
-    pub fn get_containers(&self) -> BTreeMap<String, Vec<ContainerModel>> {
-        let mut result = BTreeMap::new();
+    /*
+       pub fn get_containers(&self) -> BTreeMap<String, Vec<ContainerModel>> {
+           let mut result = BTreeMap::new();
 
-        for (vm, items) in self.containers.iter() {
-            let mut vm_result = Vec::with_capacity(items.containers.len());
+           for (vm, items) in self.containers.iter() {
+               let mut vm_result = Vec::with_capacity(items.containers.len());
 
-            for itm in items.containers.values() {
-                vm_result.push(itm.clone());
-            }
+               for itm in items.containers.values() {
+                   vm_result.push(itm.clone());
+               }
 
-            result.insert(vm.clone(), vm_result);
-        }
+               result.insert(vm.clone(), vm_result);
+           }
 
-        result
-    }
+           result
+       }
+
 
     pub fn get_cpu_by_vm_and_container(&self) -> BTreeMap<String, BTreeMap<String, f64>> {
         let mut result = BTreeMap::new();
@@ -164,7 +166,7 @@ impl DataCache {
 
         result
     }
-
+    */
     pub fn get_vm_cpu_and_mem(&self) -> BTreeMap<String, VmModel> {
         let mut result = BTreeMap::new();
 

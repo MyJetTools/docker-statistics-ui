@@ -15,10 +15,6 @@ impl DataCacheByEnv {
         }
     }
 
-    pub fn get_envs(&self) -> Vec<String> {
-        self.envs.keys().cloned().collect()
-    }
-
     pub fn update(
         &mut self,
         env: &str,
