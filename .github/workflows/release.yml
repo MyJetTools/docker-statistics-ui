@@ -31,8 +31,7 @@ jobs:
         with:
           name: build-artifacts
           path: |
-            ./target/release/docker-statistics-ui
-            ./dist 
+            ./target/dx/docker-statistics-ui/release/web
             ./Dockerfile
 
   publish:
