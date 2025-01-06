@@ -179,7 +179,7 @@ async fn get_envs() -> Result<EnvsHttpModel, ServerFnError> {
 
     let mut request_pass_key = false;
 
-    if settings.request_pass_key.unwrap_or(false) {
+    if settings.prompt_pass_phrase.unwrap_or(false) {
         if !crate::server::APP_CTX
             .ssh_private_key_resolver
             .private_key_is_loaded()

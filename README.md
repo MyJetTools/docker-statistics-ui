@@ -67,9 +67,9 @@ ssh_private_keys - can be missing. In this case SshAgent will be used.
 
 ## Not Setting private key passkey to settings
 
-In this case - application will Ask pass_phrase to enter to UI before it starts working.
+In this case - application would ask to enter pass_phrase before it starts working.
 ```yaml
-request_pass_key: true
+prompt_pass_phrase: true
 
 ssh_private_keys:
   "*":

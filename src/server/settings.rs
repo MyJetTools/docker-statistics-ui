@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 pub struct SettingsModel {
     pub envs: BTreeMap<String, Vec<VmSettingsModel>>,
     pub ssh_private_keys: Option<HashMap<String, SshPrivateKeySettingsModel>>,
-    pub request_pass_key: Option<bool>,
+    pub prompt_pass_phrase: Option<bool>,
     pub user_groups: Option<HashMap<String, Vec<String>>>,
     pub users: Option<HashMap<String, String>>,
 }
