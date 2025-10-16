@@ -6,7 +6,7 @@ use std::{collections::BTreeMap, env, time::Duration};
 mod server;
 
 use dioxus::prelude::*;
-use dioxus_utils::DataState;
+use dioxus_utils::*;
 
 mod models;
 
@@ -50,8 +50,8 @@ fn App() -> Element {
 
     let main_state_read_access = main_state.read();
 
-    match &main_state_read_access.envs.items {
-        DataState::None => {
+    match main_state_read_access.envs.items.as_ref() {
+        RenderState::None => {
             spawn(async move {
                 let envs = get_envs().await;
                 match envs {
@@ -67,11 +67,11 @@ fn App() -> Element {
             });
             return rsx! { "Loading environments..." };
         }
-        DataState::Loading => {
+        RenderState::Loading => {
             return rsx! { "Loading environments..." };
         }
-        DataState::Loaded(_) => {}
-        DataState::Error(err) => {
+        RenderState::Loaded(_) => {}
+        RenderState::Error(err) => {
             let err = format!("Error loading environments. Err: {}", err);
             return rsx! {
                 {err}

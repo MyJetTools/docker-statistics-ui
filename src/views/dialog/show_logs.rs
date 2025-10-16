@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_utils::DataState;
+use dioxus_utils::*;
 use serde::{Deserialize, Serialize};
 
 #[component]
@@ -8,7 +8,7 @@ pub fn show_logs(env: String, url: String, container_id: String) -> Element {
     let dialog_state_read_access = dialog_state.read();
 
     let items = match dialog_state_read_access.data.as_ref() {
-        DataState::None => {
+        RenderState::None => {
             let lines_amount_value = dialog_state_read_access.get_lines_amount();
             spawn(async move {
                 dialog_state.write().data.set_loading();
@@ -28,13 +28,13 @@ pub fn show_logs(env: String, url: String, container_id: String) -> Element {
                 {"Loading logs..."}
             };
         }
-        DataState::Loading => {
+        RenderState::Loading => {
             return rsx! {
                 {"Loading logs..."}
             };
         }
-        DataState::Loaded(items) => items,
-        DataState::Error(err) => {
+        RenderState::Loaded(items) => items,
+        RenderState::Error(err) => {
             let msg = format!("Error during receiving logs: {:?}", err);
             return rsx! {
                 div { style: "color:red", {msg} }
@@ -62,7 +62,7 @@ pub fn show_logs(env: String, url: String, container_id: String) -> Element {
                 button {
                     class: "btn btn-outline-secondary",
                     onclick: move |_| {
-                        dialog_state.write().data.set_none();
+                        dialog_state.write().data.reset();
                     },
                     "Request"
                 }
@@ -105,7 +105,7 @@ pub struct DialogState {
 impl DialogState {
     pub fn new() -> Self {
         Self {
-            data: DataState::None,
+            data: Default::default(),
             lines_amount: "100".to_string(),
         }
     }
