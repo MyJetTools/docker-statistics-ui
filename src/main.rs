@@ -6,6 +6,8 @@ use std::{collections::BTreeMap, env, time::Duration};
 mod server;
 
 use dioxus::prelude::*;
+#[cfg(feature = "server")]
+use dioxus::server::{IncrementalRendererConfig, ServeConfig};
 use dioxus_utils::*;
 
 mod models;
@@ -165,17 +167,18 @@ pub struct EnvsHttpModel {
 async fn get_envs() -> Result<EnvsHttpModel, ServerFnError> {
     let settings = crate::server::APP_CTX.settings_reader.get_settings().await;
 
-    let envs = {
-        let server_context = server_context();
-        let req = server_context.request_parts();
+    let user_id = dioxus::fullstack::FullstackContext::current()
+        .and_then(|ctx| {
+            let headers = ctx.parts_mut();
+            headers
+                .headers
+                .get("x-ssl-user")
+                .and_then(|user| user.to_str().ok())
+                .map(|user| user.to_string())
+        })
+        .unwrap_or_default();
 
-        let user_id = if let Some(user) = req.headers.get("x-ssl-user") {
-            user.to_str().unwrap()
-        } else {
-            ""
-        };
-        settings.get_envs(user_id)
-    };
+    let envs = settings.get_envs(&user_id);
 
     let mut request_pass_key = false;
 

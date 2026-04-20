@@ -22,7 +22,7 @@ pub fn containers_list(env: Rc<String>) -> Element {
     let show_disabled_state_value = *show_disabled_state.read();
 
 
-    let now = dioxus_utils::js::now_date_time();
+    let now = dioxus_utils::now_date_time();
 
     let main_state_read_access = main_state.read();
     match main_state_read_access.get_containers() {

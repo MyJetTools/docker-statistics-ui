@@ -36,12 +36,12 @@ my-logger = { tag = "1.2.1", git = "https://github.com/MyJetTools/my-logger.git"
 
 tokio = { version = "*", features = ["time", "rt"] }
 
-dioxus = { version = "0.6", features = ["fullstack", "router"] }
+dioxus = { version = "0.7", features = ["fullstack", "router"] }
 serde = "*"
-dioxus-utils = { tag = "0.6.0", git = "https://github.com/MyJetTools/dioxus-utils.git", features = [
+dioxus-utils = { tag = "0.7.0", git = "https://github.com/MyJetTools/dioxus-utils.git", features = [
     "fullstack",
 ] }
-dioxus-shared = { tag = "0.6.0", git = "https://github.com/MyJetTools/dioxus-shared.git" }
+dioxus-shared = { tag = "0.7.0", git = "https://github.com/MyJetTools/dioxus-shared.git" }
 chrono = "*"
 
 serde_json = { version = "*", optional = true }
