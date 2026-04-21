@@ -93,12 +93,6 @@ impl AppSettingsReader {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct SshCredentialsSettingsModel {
-    pub cert_path: String,
-    pub cert_pass_prase: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct VmSettingsModel {
     pub url: String,
 }

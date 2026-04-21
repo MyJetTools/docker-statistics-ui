@@ -8,7 +8,7 @@ pub struct UpdateMetricsCacheTimer;
 impl MyTimerTick for UpdateMetricsCacheTimer {
     async fn tick(&self) {
         let mut stop_watch = rust_extensions::StopWatch::new();
-        stop_watch.start();
+
         let urls = crate::server::APP_CTX.settings_reader.get_urls().await;
 
         let mut spawns = Vec::new();
@@ -45,8 +45,6 @@ impl MyTimerTick for UpdateMetricsCacheTimer {
         for spawn in spawns {
             let _ = spawn.await;
         }
-
-        stop_watch.pause();
 
         println!("UpdateMetricsCacheTimer took: {:?}", stop_watch.duration());
     }

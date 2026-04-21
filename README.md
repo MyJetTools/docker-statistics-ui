@@ -1,11 +1,27 @@
+# docker-statistics-ui
 
+Web UI for monitoring Docker containers running across multiple VMs and environments. Built on [Dioxus](https://dioxuslabs.com/) (fullstack + web) in Rust.
 
-### Settings example
+The UI talks to remote `docker-statistics` agents over HTTP (direct or tunneled through SSH) and aggregates per-container CPU / memory / status / logs into a single dashboard.
 
+## Features
 
-~/.docker-statistics-ui
+- Multiple environments, each with one or more VMs.
+- Direct HTTP or SSH-tunneled connections to remote agents.
+- Per-VM and aggregated ("All VMs") CPU / memory / container counts.
+- Per-container stats with live CPU and memory history graphs (150-point sliding window, refreshed each second).
+- Container filter by id / image / name / label.
+- Show / hide disabled containers.
+- Port, label, state, status, and "created" age visualization.
+- Logs viewer dialog per container.
+- Optional per-user environment access control.
+- Optional interactive SSH pass-phrase prompt on startup.
 
+## Settings
 
+Settings are loaded from `~/.docker-statistics-ui` (YAML).
+
+### Plain HTTP endpoints
 
 ```yaml
 envs:
@@ -20,6 +36,7 @@ envs:
   - url: http://10.0.1.4:7999
 ```
 
+### SSH tunneling — single shared key
 
 ```yaml
 envs:
@@ -39,6 +56,7 @@ ssh_private_keys:
     cert_pass_prase: password
 ```
 
+### SSH tunneling — key per gateway
 
 ```yaml
 envs:
@@ -62,16 +80,60 @@ ssh_private_keys:
     cert_pass_prase: password
 ```
 
-ssh_private_keys - can be missing. In this case SshAgent will be used.
+`ssh_private_keys` can be omitted — in that case the running SSH agent is used.
 
+### Prompting for SSH pass-phrase at startup
 
-## Not Setting private key passkey to settings
+If you prefer not to store the private-key pass-phrase in the settings file, set `prompt_pass_phrase: true`. On first request the UI asks for the pass-phrase and holds it in memory for the lifetime of the process.
 
-In this case - application would ask to enter pass_phrase before it starts working.
 ```yaml
 prompt_pass_phrase: true
 
 ssh_private_keys:
   "*":
     cert_path: /root/cert
+```
+
+### Per-user environment access control
+
+When the server sits behind a reverse proxy that injects an `x-ssl-user` header, environments can be gated by user. Each user maps to a group; groups list the environments they may see. The special group `"*"` grants access to every environment.
+
+```yaml
+envs:
+  prod:
+  - url: http://10.0.0.2:7999
+  stage:
+  - url: http://10.0.1.2:7999
+
+users:
+  alice@example.com: admins
+  bob@example.com:   developers
+
+user_groups:
+  admins:
+  - prod
+  - stage
+  developers:
+  - stage
+```
+
+If `users` is not defined, all environments are visible to everyone.
+
+## Running
+
+### Locally (development)
+
+Requires the [Dioxus CLI](https://dioxuslabs.com/learn/0.7/getting_started/) (`dx`).
+
+```bash
+dx serve --platform web
+```
+
+Defaults: `IP=0.0.0.0`, `PORT=9001` (inside Docker). Override via env vars.
+
+### Docker
+
+```bash
+docker build -t docker-statistics-ui .
+docker run -p 9001:9001 -v ~/.docker-statistics-ui:/root/.docker-statistics-ui docker-statistics-ui
 ```
