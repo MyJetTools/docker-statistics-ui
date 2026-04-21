@@ -4,9 +4,9 @@ on:
     tags: ["*"]
 
 env:
-  IMAGE_NAME: ghcr.io/myjettools/my-logger-ui
-  APP_NAME: my-logger-ui
-  DELIVER_NAME: my-logger-ui
+  IMAGE_NAME: ghcr.io/myjettools/docker-statistics-ui
+  APP_NAME: docker-statistics-ui
+  DELIVER_NAME: docker-statistics-ui
 
 jobs:
   build:
