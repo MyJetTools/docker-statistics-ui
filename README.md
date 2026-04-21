@@ -13,7 +13,7 @@ The UI talks to remote `docker-statistics` agents over HTTP (direct or tunneled 
 - Container filter by id / image / name / label.
 - Show / hide disabled containers.
 - Port, label, state, status, and "created" age visualization.
-- Logs viewer dialog per container.
+- Logs viewer dialog per container with configurable line count.
 - Optional per-user environment access control.
 - Optional interactive SSH pass-phrase prompt on startup.
 
@@ -21,7 +21,11 @@ The UI talks to remote `docker-statistics` agents over HTTP (direct or tunneled 
 
 Settings are loaded from `~/.docker-statistics-ui` (YAML).
 
-### Plain HTTP endpoints
+Supported top-level keys: `envs`, `ssh_private_keys`, `prompt_pass_phrase`, `users`, `user_groups`.
+
+### Plain HTTP(S) endpoints
+
+Both `http://` and `https://` schemes are accepted.
 
 ```yaml
 envs:
@@ -117,7 +121,7 @@ user_groups:
   - stage
 ```
 
-If `users` is not defined, all environments are visible to everyone.
+If `users` is not defined, all environments are visible to everyone. When `users` is defined, any request whose `x-ssl-user` value is not listed (or whose group is missing from `user_groups`) sees an empty list of environments. Assigning the value `"*"` directly to a user (e.g. `alice@example.com: "*"`) bypasses `user_groups` and grants access to every environment.
 
 ## Running
 
@@ -133,7 +137,18 @@ Defaults: `IP=0.0.0.0`, `PORT=9001` (inside Docker). Override via env vars.
 
 ### Docker
 
+The container image is based on `ghcr.io/myjettools/dioxus-docker:0.7.5` and listens on port `9001` (`IP=0.0.0.0`, `PORT=9001`). The Dockerfile expects the release bundle to already be built on the host, so build the web assets first:
+
 ```bash
+dx bundle --platform web --release
 docker build -t docker-statistics-ui .
 docker run -p 9001:9001 -v ~/.docker-statistics-ui:/root/.docker-statistics-ui docker-statistics-ui
+```
+
+### Cache-busting static assets
+
+`build.py` rewrites references to `.wasm`, `.js`, and `.css` in a given HTML file to append a random `?id=...` query string. Run it against the generated `index.html` if you need to invalidate browser caches after a release:
+
+```bash
+python3 build.py target/dx/docker-statistics-ui/release/web/public/index.html
 ```
