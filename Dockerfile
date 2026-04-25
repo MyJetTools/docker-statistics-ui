@@ -1,4 +1,4 @@
-FROM ghcr.io/myjettools/dioxus-docker:0.7.5
+FROM ghcr.io/myjettools/dioxus-docker:0.7.6
 
 ENV PORT=9001
 ENV IP=0.0.0.0
